@@ -91,6 +91,7 @@ type MediaProvider interface {
 
 // Fixture is a provider-agnostic representation of a match.
 type Fixture struct {
+	Provider        string // which provider produced this ("apisports", "footballdata")
 	ProviderID      string // provider-specific fixture ID
 	CompetitionID   int    // provider-specific numeric competition ID (API-Sports)
 	CompetitionCode string // provider-specific competition code (Football-Data)
@@ -122,6 +123,7 @@ type MatchEvent struct {
 
 // Club is a provider-agnostic representation of a football club.
 type Club struct {
+	Provider      string // which provider produced this
 	ProviderID    string
 	Name          string
 	ShortName     string
@@ -148,6 +150,7 @@ type Player struct {
 
 // Competition is a provider-agnostic representation of a league/cup.
 type Competition struct {
+	Provider   string // which provider produced this
 	ProviderID string
 	Name       string
 	Type       string // League | Cup
