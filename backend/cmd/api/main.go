@@ -68,7 +68,9 @@ func main() {
 
 	// Match ingestion service and handler
 	matchRepo := repository.NewMatchRepo(db)
-	matchSvc := services.NewMatchService(matchRepo, externalRegistry)
+	competitionRepo := repository.NewCompetitionRepo(db)
+	clubRepo := repository.NewClubRepo(db)
+	matchSvc := services.NewMatchService(matchRepo, competitionRepo, clubRepo, externalRegistry)
 	matchHandler := handlers.NewMatchHandler(matchSvc)
 
 	// Router.
