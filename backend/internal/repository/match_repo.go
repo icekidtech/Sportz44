@@ -4,12 +4,25 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/icekidtech/Sportz44/backend/internal/external"
 	"github.com/icekidtech/Sportz44/backend/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+// MatchFilters defines query parameters for listing matches.
+type MatchFilters struct {
+	ClubID       uint   // filter by home or away club
+	CompetitionID uint  // filter by competition
+	Status       string // scheduled | live | finished
+	Season       string
+	DateFrom     *time.Time
+	DateTo       *time.Time
+	Page         int
+	Limit        int
+}
 
 // MatchRepo handles DB operations for matches.
 type MatchRepo struct {
@@ -61,4 +74,79 @@ func (r *MatchRepo) UpsertMatches(
 		}
 	}
 	return nil
+}
+
+// ---- Query methods ----
+
+// ListMatches returns paginated matches matching the given filters.
+func (r *MatchRepo) ListMatches(ctx context.Context, f MatchFilters) ([]models.Match, int64, error) {
+	q := r.db.WithContext(ctx).Model(&models.Match{})
+	if f.ClubID > 0 {
+		q = q.Where("home_club_id = ? OR away_club_id = ?", f.ClubID, f.ClubID)
+	}
+	if f.CompetitionID > 0 {
+		q = q.Where("competition_id = ?", f.CompetitionID)
+	}
+	if f.Status != "" {
+		q = q.Where("status = ?", f.Status)
+	}
+	if f.Season != "" {
+		q = q.Where("season = ?", f.Season)
+	}
+	if f.DateFrom != nil {
+		q = q.Where("match_date >= ?", *f.DateFrom)
+	}
+	if f.DateTo != nil {
+		q = q.Where("match_date <= ?", *f.DateTo)
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	page, limit := f.Page, f.Limit
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+	var matches []models.Match
+	err := q.Preload("HomeClub").Preload("AwayClub").Preload("Competition").
+		Order("match_date DESC").
+		Offset(offset).Limit(limit).
+		Find(&matches).Error
+	return matches, total, err
+}
+
+// GetMatch returns a single match by ID with relations loaded.
+func (r *MatchRepo) GetMatch(ctx context.Context, id uint) (*models.Match, error) {
+	var m models.Match
+	err := r.db.WithContext(ctx).
+		Preload("HomeClub").Preload("AwayClub").Preload("Competition").
+		First(&m, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// GetMatchEvents returns all events for a match, sorted by minute.
+func (r *MatchRepo) GetMatchEvents(ctx context.Context, matchID uint) ([]models.MatchEvent, error) {
+	var events []models.MatchEvent
+	err := r.db.WithContext(ctx).
+		Where("match_id = ?", matchID).
+		Order("minute ASC").
+		Find(&events).Error
+	return events, err
+}
+
+// GetMatchLineup returns the lineup for a match, sorted by number.
+func (r *MatchRepo) GetMatchLineup(ctx context.Context, matchID uint) ([]models.MatchLineup, error) {
+	var lineup []models.MatchLineup
+	err := r.db.WithContext(ctx).
+		Where("match_id = ?", matchID).
+		Order("number ASC").
+		Find(&lineup).Error
+	return lineup, err
 }
