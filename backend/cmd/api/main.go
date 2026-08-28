@@ -14,6 +14,7 @@ import (
 	"github.com/icekidtech/Sportz44/backend/internal/api/cookies"
 	"github.com/icekidtech/Sportz44/backend/internal/api/handlers"
 	"github.com/icekidtech/Sportz44/backend/internal/api/middleware"
+	"github.com/icekidtech/Sportz44/backend/internal/external"
 	"github.com/icekidtech/Sportz44/backend/internal/repository"
 	"github.com/icekidtech/Sportz44/backend/internal/services"
 	"github.com/icekidtech/Sportz44/backend/pkg/cache"
@@ -57,6 +58,13 @@ func main() {
 	}
 	authHandler := handlers.NewAuthHandler(authSvc, cookieCfg, cfg.JWTExpiry, cfg.RefreshExpiry)
 	healthHandler := handlers.NewHealthHandler(db, rdb)
+
+	// External data providers & registry
+	apiSports := external.NewAPISportsProvider(cfg.APISportsKey, cfg.APISportsHost)
+	footballData := external.NewFootballDataProvider(cfg.FootballDataKey, cfg.FootballDataURL)
+	flashScore := external.NewFlashScoreProvider(cfg.FlashScoreURL)
+	tsdb := external.NewTheSportsDBProvider(cfg.TheSportsDBKey, cfg.TheSportsDBURL)
+	_ = external.NewRegistry(apiSports, footballData, flashScore, tsdb)
 
 	// Router.
 	gin.SetMode(gin.ReleaseMode)
