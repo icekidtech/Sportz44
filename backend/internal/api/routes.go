@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterRoutes wires up all HTTP routes on the Gin engine.
-func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.HealthHandler, jwtSecret string) {
+func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.HealthHandler, match *handlers.MatchHandler, jwtSecret string) {
 	r.GET("/health", health.Check)
 
 	// Public auth endpoints (cookies are set here).
@@ -27,5 +27,6 @@ func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.
 	protected.Use(middleware.Auth(jwtSecret), middleware.CSRFProtect())
 	{
 		_ = protected // feature routes land here next (matches, players, community, ...)
+		protected.GET("/matches/sync", match.SyncCompetition)
 	}
 }
