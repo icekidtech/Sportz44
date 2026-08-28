@@ -78,6 +78,11 @@ func main() {
 	hub := ws.NewHub(rdb.Client)
 	wsHandler := handlers.NewWSHandler(hub, cfg.AllowedOrigins)
 
+	// Live match listener — runs in-process as a goroutine (no separate binary).
+	// Polls the realtime provider, upserts events, and publishes to Redis so the
+	// hub broadcasts them to connected WebSocket clients.
+	listener := services.NewMatchListener(externalRegistry, matchRepo, rdb, log, 30*time.Second)
+
 	// Router.
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -88,6 +93,11 @@ func main() {
 		Addr:    ":" + cfg.HTTPPort,
 		Handler: r,
 	}
+
+	// Start the match listener in the background.
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+	listener.Start(appCtx)
 
 	go func() {
 		log.Infof("Sportz44 API listening on :%s", cfg.HTTPPort)
@@ -101,6 +111,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Info("shutting down...")
+	appCancel() // stop the match listener
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
