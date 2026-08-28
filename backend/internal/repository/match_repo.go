@@ -170,15 +170,18 @@ func (r *MatchRepo) UpsertMatchEvents(ctx context.Context, matchID uint, events 
 	for _, e := range events {
 		teamID, _ := strconv.Atoi(e.TeamID)
 		playerID, _ := strconv.Atoi(e.PlayerID)
+		assistID, _ := strconv.Atoi(e.AssistPlayerID)
 		ev := models.MatchEvent{
-			MatchID:    matchID,
-			Minute:     e.Minute,
-			EventType:  e.EventType,
-			TeamID:     uint(teamID),
-			PlayerID:   uint(playerID),
-			PlayerName: e.PlayerName,
-			Detail:     e.Detail,
-			Comment:    e.Comment,
+			MatchID:          matchID,
+			Minute:           e.Minute,
+			EventType:        e.EventType,
+			TeamID:           uint(teamID),
+			PlayerID:         uint(playerID),
+			PlayerName:       e.PlayerName,
+			AssistPlayerID:   uint(assistID),
+			AssistPlayerName: e.AssistPlayerName,
+			Detail:           e.Detail,
+			Comment:          e.Comment,
 		}
 		err := r.db.WithContext(ctx).
 			Clauses(clause.OnConflict{
