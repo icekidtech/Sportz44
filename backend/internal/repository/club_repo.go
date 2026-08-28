@@ -28,21 +28,22 @@ func (r *ClubRepo) UpsertClubs(ctx context.Context, clubs []external.Club) (map[
 	for _, c := range clubs {
 		apiID, _ := strconv.Atoi(c.ProviderID)
 		m := models.Club{
-			Provider:    c.Provider,
-			ExternalID:  c.ProviderID,
-			APISportsID: apiID,
-			Name:        c.Name,
-			ShortName:   c.ShortName,
-			Country:     c.Country,
-			LogoURL:     c.LogoURL,
-			Stadium:     c.Stadium,
-			Colors:      c.Colors,
-			Founded:     c.Founded,
+			Provider:      c.Provider,
+			ExternalID:    c.ProviderID,
+			APISportsID:   apiID,
+			Name:          c.Name,
+			ShortName:     c.ShortName,
+			Country:       c.Country,
+			CompetitionID: uint(c.CompetitionID),
+			LogoURL:       c.LogoURL,
+			Stadium:       c.Stadium,
+			Colors:        c.Colors,
+			Founded:       c.Founded,
 		}
 		err := r.db.WithContext(ctx).
 			Clauses(clause.OnConflict{
 				Columns:   []clause.Column{{Name: "provider"}, {Name: "external_id"}},
-				DoUpdates: clause.AssignmentColumns([]string{"name", "short_name", "country", "logo_url", "stadium", "colors", "founded"}),
+				DoUpdates: clause.AssignmentColumns([]string{"name", "short_name", "country", "competition_id", "logo_url", "stadium", "colors", "founded"}),
 			}).
 			Create(&m).Error
 		if err != nil {
