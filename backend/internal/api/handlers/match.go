@@ -136,6 +136,20 @@ func (h *MatchHandler) GetMatchStats(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"stats": stats})
 }
 
+// SyncMatchEvents triggers a backfill of events for a single match.
+func (h *MatchHandler) SyncMatchEvents(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid match id"})
+		return
+	}
+	if err := h.svc.SyncMatchEvents(c.Request.Context(), uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "synced"})
+}
+
 func atoiDefault(s string, def int) int {
 	if s == "" {
 		return def
