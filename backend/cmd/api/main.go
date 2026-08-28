@@ -17,6 +17,7 @@ import (
 	"github.com/icekidtech/Sportz44/backend/internal/external"
 	"github.com/icekidtech/Sportz44/backend/internal/repository"
 	"github.com/icekidtech/Sportz44/backend/internal/services"
+	"github.com/icekidtech/Sportz44/backend/internal/ws"
 	"github.com/icekidtech/Sportz44/backend/pkg/cache"
 	"github.com/icekidtech/Sportz44/backend/pkg/config"
 	"github.com/icekidtech/Sportz44/backend/pkg/database"
@@ -73,11 +74,15 @@ func main() {
 	matchSvc := services.NewMatchService(matchRepo, competitionRepo, clubRepo, externalRegistry)
 	matchHandler := handlers.NewMatchHandler(matchSvc)
 
+	// WebSocket live hub (subscribes to Redis match-events channel).
+	hub := ws.NewHub(rdb.Client)
+	wsHandler := handlers.NewWSHandler(hub, cfg.AllowedOrigins)
+
 	// Router.
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(middleware.Logging(log), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
-	api.RegisterRoutes(r, authHandler, healthHandler, matchHandler, cfg.JWTSecret)
+	api.RegisterRoutes(r, authHandler, healthHandler, matchHandler, wsHandler, cfg.JWTSecret)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,
