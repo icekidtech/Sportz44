@@ -26,6 +26,7 @@ type Config struct {
 	JWTExpiry      time.Duration
 	RefreshExpiry  time.Duration
 	AllowedOrigins []string
+	TrustedProxies []string
 	CookieDomain   string
 	AdminEmail     string
 	AdminPassword  string
@@ -51,6 +52,7 @@ func Load() (*Config, error) {
 		FootballDataURL: getEnv("FOOTBALL_DATA_URL", ""),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AllowedOrigins: parseOrigins(getEnv("ALLOWED_ORIGINS", "*")),
+		TrustedProxies: parseProxies(getEnv("TRUSTED_PROXIES", "")),
 		CookieDomain:   getEnv("COOKIE_DOMAIN", ""),
 		AdminEmail:     os.Getenv("ADMIN_EMAIL"),
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
@@ -106,6 +108,24 @@ func getEnvInt(key string, def int) int {
 func parseOrigins(s string) []string {
 	if s == "*" {
 		return []string{"*"}
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// parseProxies parses a comma-separated list of trusted proxy CIDRs/IPs.
+// An empty value means "trust no proxy" (Gin will use the TCP peer address
+// directly, ignoring X-Forwarded-For).
+func parseProxies(s string) []string {
+	if s == "" {
+		return nil
 	}
 	parts := strings.Split(s, ",")
 	out := make([]string, 0, len(parts))
