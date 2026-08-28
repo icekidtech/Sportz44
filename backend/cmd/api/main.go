@@ -100,6 +100,10 @@ func main() {
 	// Router.
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	// Only trust proxy headers (X-Forwarded-For / X-Real-IP) from configured
+	// proxies. Empty TRUSTED_PROXIES means use the TCP peer address directly,
+	// which prevents clients from spoofing their IP for rate limiting.
+	r.SetTrustedProxies(cfg.TrustedProxies)
 	r.Use(middleware.Logging(log), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
 	api.RegisterRoutes(
 		r,
