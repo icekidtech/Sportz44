@@ -46,6 +46,17 @@ func (p *APISportsProvider) Healthy(ctx context.Context) bool {
 	return true
 }
 
+// SupportsSeason reports whether this provider can serve the given season.
+// The API-Sports free plan only grants access to seasons 2022-2024; paid
+// plans unlock the full range. Update this if the account plan changes.
+func (p *APISportsProvider) SupportsSeason(season string) bool {
+	y, err := strconv.Atoi(season)
+	if err != nil {
+		return false
+	}
+	return y >= 2022 && y <= 2024
+}
+
 // ---- Response DTOs (subset of API-Sports v3) ----
 
 type apiFixturesResponse struct {
@@ -92,8 +103,9 @@ type apiTeamRef struct {
 
 // ---- FixtureProvider ----
 
-func (p *APISportsProvider) GetFixtures(ctx context.Context, competitionID int, season, status string) ([]Fixture, error) {
-	path := fmt.Sprintf("/fixtures?league=%d&season=%s", competitionID, season)
+func (p *APISportsProvider) GetFixtures(ctx context.Context, competitionID string, season, status string) ([]Fixture, error) {
+	leagueID, _ := strconv.Atoi(competitionID)
+	path := fmt.Sprintf("/fixtures?league=%d&season=%s", leagueID, season)
 	if status != "" {
 		path += "&status=" + status
 	}
@@ -150,7 +162,7 @@ func (p *APISportsProvider) mapFixture(f apiFixture) Fixture {
 // ---- LiveProvider ----
 
 func (p *APISportsProvider) GetLiveMatches(ctx context.Context) ([]Fixture, error) {
-	return p.GetFixtures(ctx, 0, "", "live")
+	return p.GetFixtures(ctx, "", "", "live")
 }
 
 func (p *APISportsProvider) GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error) {
