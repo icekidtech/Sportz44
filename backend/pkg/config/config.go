@@ -29,6 +29,8 @@ type Config struct {
 	CookieDomain   string
 	AdminEmail     string
 	AdminPassword  string
+	RateLimitRequests int
+	RateLimitWindow   time.Duration
 }
 
 // Load reads configuration from the environment (and an optional .env file).
@@ -66,6 +68,13 @@ func Load() (*Config, error) {
 	}
 	c.RefreshExpiry = rexp
 
+	rlWindow, err := time.ParseDuration(getEnv("RATE_LIMIT_WINDOW", "1m"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid RATE_LIMIT_WINDOW: %w", err)
+	}
+	c.RateLimitWindow = rlWindow
+	c.RateLimitRequests = getEnvInt("RATE_LIMIT_REQUESTS", 100)
+
 	if c.JWTSecret == "" {
 		return nil, fmt.Errorf("JWT_SECRET is required")
 	}
@@ -80,6 +89,18 @@ func getEnv(key, def string) string {
 		return v
 	}
 	return def
+}
+
+func getEnvInt(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	n := 0
+	if _, err := fmt.Sscanf(v, "%d", &n); err != nil {
+		return def
+	}
+	return n
 }
 
 func parseOrigins(s string) []string {
