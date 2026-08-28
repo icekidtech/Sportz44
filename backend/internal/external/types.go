@@ -148,6 +148,21 @@ type Player struct {
 	Rating       float64
 }
 
+// MatchStat is a provider-agnostic representation of a per-team match
+// statistic (possession, shots, xG, corners, fouls, cards, ...).
+type MatchStat struct {
+	TeamID   string // provider-specific team ID
+	StatType string // possession | shots | shots_on_target | corners | fouls | yellow_cards | red_cards | xg | ...
+	Value    string // provider returns values as strings ("58%", "12", "1.34")
+}
+
+// StatsProvider supplies per-match statistics.
+type StatsProvider interface {
+	Provider
+	// GetMatchStats returns the statistics for a match.
+	GetMatchStats(ctx context.Context, providerFixtureID string) ([]MatchStat, error)
+}
+
 // Competition is a provider-agnostic representation of a league/cup.
 type Competition struct {
 	Provider   string // which provider produced this
