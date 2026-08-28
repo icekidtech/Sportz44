@@ -57,6 +57,34 @@ func (r *Registry) Fixtures(ctx context.Context, kind ProviderKind) FixtureProvi
 	return nil
 }
 
+// FixturesForSeason returns a healthy FixtureProvider that can serve the given
+// season, preferring providers that explicitly support it (e.g. Football-Data
+// for the current season, API-Sports for 2022-2024). Falls back to any healthy
+// fixture provider if none declares season support.
+func (r *Registry) FixturesForSeason(ctx context.Context, season string) FixtureProvider {
+	for _, p := range r.All() {
+		if sp, ok := p.(SeasonProvider); ok && sp.SupportsSeason(season) {
+			if fp, ok := p.(FixtureProvider); ok && p.Healthy(ctx) {
+				return fp
+			}
+		}
+	}
+	return r.Fixtures(ctx, ProviderBulk)
+}
+
+// CompetitionsForSeason returns a healthy CompetitionProvider that can serve
+// the given season, preferring providers that explicitly support it.
+func (r *Registry) CompetitionsForSeason(ctx context.Context, season string) CompetitionProvider {
+	for _, p := range r.All() {
+		if sp, ok := p.(SeasonProvider); ok && sp.SupportsSeason(season) {
+			if cp, ok := p.(CompetitionProvider); ok && p.Healthy(ctx) {
+				return cp
+			}
+		}
+	}
+	return r.Competitions(ctx)
+}
+
 // Live returns a healthy realtime LiveProvider, or nil.
 func (r *Registry) Live(ctx context.Context) LiveProvider {
 	if p := r.ByKind(ctx, ProviderRealtime); p != nil {
