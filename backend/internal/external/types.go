@@ -64,14 +64,6 @@ type SquadProvider interface {
 	GetSquad(ctx context.Context, providerTeamID string) ([]Player, error)
 }
 
-func (s SquadProvider) GetSquad(ctx context.Context, param any) ([]Player, error) {
-	panic("unimplemented")
-}
-
-func (s SquadProvider) GetSquad(ctx context.Context, param any) ([]Player, error) {
-	panic("unimplemented")
-}
-
 // CompetitionProvider supplies league/cup metadata.
 type CompetitionProvider interface {
 	Provider
@@ -125,6 +117,8 @@ type MatchEvent struct {
 	TeamID            string // provider-specific team ID
 	PlayerID          string // provider-specific player ID
 	PlayerName        string
+	AssistPlayerID    string // provider-specific player ID of the assister (goals only)
+	AssistPlayerName  string
 	Detail            string // e.g. "Yellow Card", "Normal Goal"
 	Comment           string
 }
