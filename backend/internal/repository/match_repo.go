@@ -197,3 +197,41 @@ func (r *MatchRepo) UpsertMatchEvents(ctx context.Context, matchID uint, events 
 	}
 	return nil
 }
+
+// UpsertMatchStats inserts or updates per-team match statistics, keyed by
+// (match_id, team_id, stat_type).
+func (r *MatchRepo) UpsertMatchStats(ctx context.Context, matchID uint, stats []external.MatchStat) error {
+	for _, s := range stats {
+		teamID, _ := strconv.Atoi(s.TeamID)
+		ms := models.MatchStat{
+			MatchID:  matchID,
+			TeamID:   uint(teamID),
+			StatType: s.StatType,
+			Value:    s.Value,
+		}
+		err := r.db.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "match_id"},
+					{Name: "team_id"},
+					{Name: "stat_type"},
+				},
+				DoUpdates: clause.AssignmentColumns([]string{"value"}),
+			}).
+			Create(&ms).Error
+		if err != nil {
+			return fmt.Errorf("upsert stat for match %d: %w", matchID, err)
+		}
+	}
+	return nil
+}
+
+// GetMatchStats returns the statistics for a match, grouped by team.
+func (r *MatchRepo) GetMatchStats(ctx context.Context, matchID uint) ([]models.MatchStat, error) {
+	var stats []models.MatchStat
+	err := r.db.WithContext(ctx).
+		Where("match_id = ?", matchID).
+		Order("team_id ASC, id ASC").
+		Find(&stats).Error
+	return stats, err
+}
