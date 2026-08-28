@@ -55,6 +55,16 @@ type LiveProvider interface {
 	GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error)
 }
 
+// EventsProvider supplies events for a specific fixture (live or finished).
+// It is a lighter contract than LiveProvider: providers that can serve events
+// for any match (e.g. Football-Data) implement this without needing to expose
+// a live-match feed.
+type EventsProvider interface {
+	Provider
+	// GetLiveEvents returns the events for a match by its provider-specific ID.
+	GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error)
+}
+
 // SquadProvider supplies club and player data.
 type SquadProvider interface {
 	Provider

@@ -95,14 +95,14 @@ func (r *Registry) Live(ctx context.Context) LiveProvider {
 	return nil
 }
 
-// EventsFor returns a healthy LiveProvider for the named provider, or nil.
+// EventsFor returns a healthy EventsProvider for the named provider, or nil.
 // Used to fetch events for a match using the same provider that ingested it,
 // so the provider-specific external ID is always valid.
-func (r *Registry) EventsFor(ctx context.Context, name string) LiveProvider {
+func (r *Registry) EventsFor(ctx context.Context, name string) EventsProvider {
 	for _, p := range r.All() {
 		if p.Name() == name && p.Healthy(ctx) {
-			if lp, ok := p.(LiveProvider); ok {
-				return lp
+			if ep, ok := p.(EventsProvider); ok {
+				return ep
 			}
 		}
 	}
