@@ -21,6 +21,7 @@ type Config struct {
 	JWTExpiry      time.Duration
 	RefreshExpiry  time.Duration
 	AllowedOrigins []string
+	CookieDomain   string
 	AdminEmail     string
 	AdminPassword  string
 }
@@ -38,6 +39,7 @@ func Load() (*Config, error) {
 		APISportsHost:  getEnv("API_SPORTS_HOST", ""),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AllowedOrigins: parseOrigins(getEnv("ALLOWED_ORIGINS", "*")),
+		CookieDomain:   getEnv("COOKIE_DOMAIN", ""),
 		AdminEmail:     os.Getenv("ADMIN_EMAIL"),
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
 	}
