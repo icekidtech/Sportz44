@@ -74,6 +74,20 @@ func main() {
 	matchSvc := services.NewMatchService(matchRepo, competitionRepo, clubRepo, externalRegistry)
 	matchHandler := handlers.NewMatchHandler(matchSvc)
 
+	// Player service and handler
+	playerRepo := repository.NewPlayerRepo(db)
+	playerSvc := services.NewPlayerService(playerRepo, clubRepo, externalRegistry)
+	playerHandler := handlers.NewPlayerHandler(playerSvc)
+
+	// Standings service and handler
+	standingsRepo := repository.NewStandingsRepo(db)
+	standingsSvc := services.NewStandingsService(standingsRepo)
+	standingsHandler := handlers.NewStandingsHandler(standingsSvc)
+
+	// User subscriptions & notification preferences
+	userSvc := services.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userSvc)
+
 	// WebSocket live hub (subscribes to Redis match-events channel).
 	hub := ws.NewHub(rdb.Client)
 	wsHandler := handlers.NewWSHandler(hub, cfg.AllowedOrigins)
@@ -87,7 +101,20 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(middleware.Logging(log), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
-	api.RegisterRoutes(r, authHandler, healthHandler, matchHandler, wsHandler, cfg.JWTSecret)
+	api.RegisterRoutes(
+		r,
+		authHandler,
+		healthHandler,
+		matchHandler,
+		playerHandler,
+		standingsHandler,
+		userHandler,
+		wsHandler,
+		rdb.Client,
+		cfg.RateLimitRequests,
+		cfg.RateLimitWindow,
+		cfg.JWTSecret,
+	)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,

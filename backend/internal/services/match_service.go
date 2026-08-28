@@ -124,3 +124,8 @@ func (s *MatchService) GetMatchEvents(ctx context.Context, matchID uint) ([]mode
 func (s *MatchService) GetMatchLineup(ctx context.Context, matchID uint) ([]models.MatchLineup, error) {
 	return s.matches.GetMatchLineup(ctx, matchID)
 }
+
+// GetMatchStats returns the statistics for a match.
+func (s *MatchService) GetMatchStats(ctx context.Context, matchID uint) ([]models.MatchStat, error) {
+	return s.matches.GetMatchStats(ctx, matchID)
+}
