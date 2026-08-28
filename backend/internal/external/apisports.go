@@ -86,6 +86,7 @@ type apiFixture struct {
 		} `json:"fulltime"`
 	} `json:"score"`
 	Fixture struct {
+		ID     int    `json:"id"`
 		Status struct {
 			Short string `json:"short"`
 		} `json:"status"`
@@ -144,7 +145,7 @@ func (p *APISportsProvider) mapFixture(f apiFixture) Fixture {
 	date, _ := time.Parse(time.RFC3339, f.Date)
 	return Fixture{
 		Provider:      p.Name(),
-		ProviderID:    strconv.Itoa(f.ID),
+		ProviderID:    strconv.Itoa(f.Fixture.ID),
 		CompetitionID: f.League.ID,
 		Season:        "",
 		HomeTeamID:    strconv.Itoa(f.Teams.Home.ID),
