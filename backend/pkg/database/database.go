@@ -30,6 +30,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.MatchEvent{},
 		&models.MatchLineup{},
 		&models.MatchStat{},
+		&models.Injury{},
 		&models.User{},
 		&models.UserClubSubscription{},
 		&models.NotificationPreference{},
