@@ -64,6 +64,14 @@ type SquadProvider interface {
 	GetSquad(ctx context.Context, providerTeamID string) ([]Player, error)
 }
 
+func (s SquadProvider) GetSquad(ctx context.Context, param any) ([]Player, error) {
+	panic("unimplemented")
+}
+
+func (s SquadProvider) GetSquad(ctx context.Context, param any) ([]Player, error) {
+	panic("unimplemented")
+}
+
 // CompetitionProvider supplies league/cup metadata.
 type CompetitionProvider interface {
 	Provider
@@ -96,17 +104,17 @@ type Fixture struct {
 	CompetitionID   int    // provider-specific numeric competition ID (API-Sports)
 	CompetitionCode string // provider-specific competition code (Football-Data)
 	Season          string
-	HomeTeamID    string // provider-specific team ID
-	AwayTeamID    string // provider-specific team ID
-	HomeTeamName  string
-	AwayTeamName  string
-	MatchDate     time.Time
-	Status        string // scheduled | live | finished | postponed
-	HomeScore     int
-	AwayScore     int
-	Minute        int
-	Venue         string
-	Referee       string
+	HomeTeamID      string // provider-specific team ID
+	AwayTeamID      string // provider-specific team ID
+	HomeTeamName    string
+	AwayTeamName    string
+	MatchDate       time.Time
+	Status          string // scheduled | live | finished | postponed
+	HomeScore       int
+	AwayScore       int
+	Minute          int
+	Venue           string
+	Referee         string
 }
 
 // MatchEvent is a provider-agnostic representation of an in-match event.
