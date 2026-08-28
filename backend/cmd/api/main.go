@@ -59,18 +59,23 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authSvc, cookieCfg, cfg.JWTExpiry, cfg.RefreshExpiry)
 	healthHandler := handlers.NewHealthHandler(db, rdb)
 
-	// External data providers & registry
+	// External providers & registry
 	apiSports := external.NewAPISportsProvider(cfg.APISportsKey, cfg.APISportsHost)
 	footballData := external.NewFootballDataProvider(cfg.FootballDataKey, cfg.FootballDataURL)
 	flashScore := external.NewFlashScoreProvider(cfg.FlashScoreURL)
 	tsdb := external.NewTheSportsDBProvider(cfg.TheSportsDBKey, cfg.TheSportsDBURL)
-	_ = external.NewRegistry(apiSports, footballData, flashScore, tsdb)
+	externalRegistry := external.NewRegistry(apiSports, footballData, flashScore, tsdb)
+
+	// Match ingestion service and handler
+	matchRepo := repository.NewMatchRepo(db)
+	matchSvc := services.NewMatchService(matchRepo, externalRegistry)
+	matchHandler := handlers.NewMatchHandler(matchSvc)
 
 	// Router.
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(middleware.Logging(log), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
-	api.RegisterRoutes(r, authHandler, healthHandler, cfg.JWTSecret)
+	api.RegisterRoutes(r, authHandler, healthHandler, matchHandler, cfg.JWTSecret)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,
