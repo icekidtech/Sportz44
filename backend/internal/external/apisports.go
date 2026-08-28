@@ -86,7 +86,7 @@ type apiFixture struct {
 		} `json:"fulltime"`
 	} `json:"score"`
 	Fixture struct {
-		ID     int    `json:"id"`
+		ID     int `json:"id"`
 		Status struct {
 			Short string `json:"short"`
 		} `json:"status"`

@@ -11,25 +11,25 @@ import (
 
 // Config holds all runtime configuration loaded from environment / .env.
 type Config struct {
-	Environment    string
-	HTTPPort       string
-	DatabaseURL    string
-	RedisURL       string
-	APISportsKey   string
-	APISportsHost  string
-	FlashScoreURL  string
-	TheSportsDBKey string
-	TheSportsDBURL string
-	FootballDataKey string
-	FootballDataURL string
-	JWTSecret      string
-	JWTExpiry      time.Duration
-	RefreshExpiry  time.Duration
-	AllowedOrigins []string
-	TrustedProxies []string
-	CookieDomain   string
-	AdminEmail     string
-	AdminPassword  string
+	Environment       string
+	HTTPPort          string
+	DatabaseURL       string
+	RedisURL          string
+	APISportsKey      string
+	APISportsHost     string
+	FlashScoreURL     string
+	TheSportsDBKey    string
+	TheSportsDBURL    string
+	FootballDataKey   string
+	FootballDataURL   string
+	JWTSecret         string
+	JWTExpiry         time.Duration
+	RefreshExpiry     time.Duration
+	AllowedOrigins    []string
+	TrustedProxies    []string
+	CookieDomain      string
+	AdminEmail        string
+	AdminPassword     string
 	RateLimitRequests int
 	RateLimitWindow   time.Duration
 }
@@ -39,23 +39,23 @@ func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	c := &Config{
-		Environment:    getEnv("ENVIRONMENT", ""),
-		HTTPPort:       getEnv("HTTP_PORT", ""),
-		DatabaseURL:    getEnv("DATABASE_URL", ""),
-		RedisURL:       getEnv("REDIS_URL", ""),
-		APISportsKey:   os.Getenv("API_SPORTS_KEY"),
-		APISportsHost:  getEnv("API_SPORTS_HOST", ""),
-		FlashScoreURL:  getEnv("FLASHSCORE_URL", ""),
-		TheSportsDBKey: os.Getenv("THESPORTSDB_KEY"),
-		TheSportsDBURL: getEnv("THESPORTSDB_URL", ""),
+		Environment:     getEnv("ENVIRONMENT", ""),
+		HTTPPort:        getEnv("HTTP_PORT", ""),
+		DatabaseURL:     getEnv("DATABASE_URL", ""),
+		RedisURL:        getEnv("REDIS_URL", ""),
+		APISportsKey:    os.Getenv("API_SPORTS_KEY"),
+		APISportsHost:   getEnv("API_SPORTS_HOST", ""),
+		FlashScoreURL:   getEnv("FLASHSCORE_URL", ""),
+		TheSportsDBKey:  os.Getenv("THESPORTSDB_KEY"),
+		TheSportsDBURL:  getEnv("THESPORTSDB_URL", ""),
 		FootballDataKey: os.Getenv("FOOTBALL_DATA_KEY"),
 		FootballDataURL: getEnv("FOOTBALL_DATA_URL", ""),
-		JWTSecret:      os.Getenv("JWT_SECRET"),
-		AllowedOrigins: parseOrigins(getEnv("ALLOWED_ORIGINS", "*")),
-		TrustedProxies: parseProxies(getEnv("TRUSTED_PROXIES", "")),
-		CookieDomain:   getEnv("COOKIE_DOMAIN", ""),
-		AdminEmail:     os.Getenv("ADMIN_EMAIL"),
-		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
+		JWTSecret:       os.Getenv("JWT_SECRET"),
+		AllowedOrigins:  parseOrigins(getEnv("ALLOWED_ORIGINS", "*")),
+		TrustedProxies:  parseProxies(getEnv("TRUSTED_PROXIES", "")),
+		CookieDomain:    getEnv("COOKIE_DOMAIN", ""),
+		AdminEmail:      os.Getenv("ADMIN_EMAIL"),
+		AdminPassword:   os.Getenv("ADMIN_PASSWORD"),
 	}
 
 	exp, err := time.ParseDuration(getEnv("JWT_EXPIRY", "15m"))

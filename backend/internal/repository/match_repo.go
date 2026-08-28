@@ -14,14 +14,14 @@ import (
 
 // MatchFilters defines query parameters for listing matches.
 type MatchFilters struct {
-	ClubID       uint   // filter by home or away club
-	CompetitionID uint  // filter by competition
-	Status       string // scheduled | live | finished
-	Season       string
-	DateFrom     *time.Time
-	DateTo       *time.Time
-	Page         int
-	Limit        int
+	ClubID        uint   // filter by home or away club
+	CompetitionID uint   // filter by competition
+	Status        string // scheduled | live | finished
+	Season        string
+	DateFrom      *time.Time
+	DateTo        *time.Time
+	Page          int
+	Limit         int
 }
 
 // MatchRepo handles DB operations for matches.
