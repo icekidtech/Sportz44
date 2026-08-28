@@ -50,6 +50,11 @@ func (s *MatchService) SyncCompetition(ctx context.Context, competitionID, seaso
 	if len(fixtures) == 0 {
 		return fmt.Errorf("no fixtures returned for competition %s season %s", competitionID, season)
 	}
+	// Stamp the season onto each fixture so matches carry it (providers may
+	// not populate it themselves).
+	for i := range fixtures {
+		fixtures[i].Season = season
+	}
 
 	// 2. Upsert the competition metadata and resolve its internal ID.
 	provider := fixtures[0].Provider
