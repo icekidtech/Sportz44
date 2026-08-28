@@ -95,6 +95,18 @@ func (r *Registry) Live(ctx context.Context) LiveProvider {
 	return nil
 }
 
+// Events returns a healthy LiveProvider that can fetch events for any fixture
+// (live or finished). It prefers the bulk provider (API-Sports) because it
+// serves reliable historical events, falling back to the realtime provider.
+func (r *Registry) Events(ctx context.Context) LiveProvider {
+	if p := r.ByKind(ctx, ProviderBulk); p != nil {
+		if lp, ok := p.(LiveProvider); ok {
+			return lp
+		}
+	}
+	return r.Live(ctx)
+}
+
 // Squad returns a healthy SquadProvider, or nil.
 func (r *Registry) Squad(ctx context.Context) SquadProvider {
 	if p := r.ByKind(ctx, ProviderBulk); p != nil {
