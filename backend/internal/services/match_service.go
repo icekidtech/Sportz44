@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/icekidtech/Sportz44/backend/internal/external"
+	"github.com/icekidtech/Sportz44/backend/internal/models"
 	"github.com/icekidtech/Sportz44/backend/internal/repository"
 )
 
-// MatchService orchestrates match ingestion.
+// MatchService orchestrates match ingestion and querying.
 type MatchService struct {
 	matches      *repository.MatchRepo
 	competitions *repository.CompetitionRepo
@@ -100,4 +101,26 @@ func (s *MatchService) SyncCompetition(ctx context.Context, competitionID, seaso
 		return fmt.Errorf("upsert matches: %w", err)
 	}
 	return nil
+}
+
+// ---- Query methods ----
+
+// ListMatches returns paginated matches matching the given filters.
+func (s *MatchService) ListMatches(ctx context.Context, f repository.MatchFilters) ([]models.Match, int64, error) {
+	return s.matches.ListMatches(ctx, f)
+}
+
+// GetMatch returns a single match by ID.
+func (s *MatchService) GetMatch(ctx context.Context, id uint) (*models.Match, error) {
+	return s.matches.GetMatch(ctx, id)
+}
+
+// GetMatchEvents returns events for a match.
+func (s *MatchService) GetMatchEvents(ctx context.Context, matchID uint) ([]models.MatchEvent, error) {
+	return s.matches.GetMatchEvents(ctx, matchID)
+}
+
+// GetMatchLineup returns the lineup for a match.
+func (s *MatchService) GetMatchLineup(ctx context.Context, matchID uint) ([]models.MatchLineup, error) {
+	return s.matches.GetMatchLineup(ctx, matchID)
 }
