@@ -105,6 +105,16 @@ func (r *Registry) Squad(ctx context.Context) SquadProvider {
 	return nil
 }
 
+// Stats returns a healthy StatsProvider, or nil.
+func (r *Registry) Stats(ctx context.Context) StatsProvider {
+	for _, p := range r.All() {
+		if sp, ok := p.(StatsProvider); ok && p.Healthy(ctx) {
+			return sp
+		}
+	}
+	return nil
+}
+
 // Competitions returns a healthy CompetitionProvider, or nil.
 func (r *Registry) Competitions(ctx context.Context) CompetitionProvider {
 	if p := r.ByKind(ctx, ProviderBulk); p != nil {
