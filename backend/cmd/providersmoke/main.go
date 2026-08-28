@@ -28,7 +28,12 @@ func main() {
 	fs := external.NewFlashScoreProvider(os.Getenv("FLASHSCORE_URL"))
 	tsdb := external.NewTheSportsDBProvider(os.Getenv("THESPORTSDB_KEY"), os.Getenv("THESPORTSDB_URL"))
 
-	reg := external.NewRegistry(api, fs, tsdb)
+	// Football-Data provider (current season free tier)
+	fdKey := os.Getenv("FOOTBALL_DATA_KEY")
+	fdURL := os.Getenv("FOOTBALL_DATA_URL")
+	fd := external.NewFootballDataProvider(fdKey, fdURL)
+
+	reg := external.NewRegistry(api, fd, fs, tsdb)
 	fmt.Println("Providers registered:", len(reg.All()))
 
 	// 1. Competitions (La Liga = 140)
@@ -49,6 +54,18 @@ func main() {
 		}
 	}
 
+	// 1a. Football-Data current-season competitions
+	season := external.CurrentSeason()
+	cp := reg.CompetitionsForSeason(ctx, season)
+	compsFD, err := cp.GetCompetitions(ctx, season)
+	if err != nil {
+		fmt.Println("Football-Data GetCompetitions error:", err)
+	} else if len(compsFD) > 0 {
+		fmt.Printf("Football-Data competitions (%s): %d (first: %+v)\n", season, len(compsFD), compsFD[0])
+	} else {
+		fmt.Println("Football-Data competitions: no data")
+	}
+
 	// 2. Team (Real Madrid = 541)
 	team, err := api.GetTeam(ctx, "541")
 	if err != nil {
@@ -66,7 +83,7 @@ func main() {
 	}
 
 	// 4. Fixtures for La Liga
-	fixtures, err := api.GetFixtures(ctx, 140, "2025", "")
+	fixtures, err := api.GetFixtures(ctx, "140", "2025", "")
 	if err != nil {
 		fmt.Println("GetFixtures error:", err)
 	} else if len(fixtures) > 0 {
