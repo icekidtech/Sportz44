@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterRoutes wires up all HTTP routes on the Gin engine.
-func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.HealthHandler, match *handlers.MatchHandler, jwtSecret string) {
+func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.HealthHandler, match *handlers.MatchHandler, ws *handlers.WSHandler, jwtSecret string) {
 	r.GET("/health", health.Check)
 
 	// Public auth endpoints (cookies are set here).
@@ -20,6 +20,9 @@ func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.
 		authGroup.POST("/logout", auth.Logout)
 		authGroup.GET("/me", middleware.Auth(jwtSecret), auth.Me)
 	}
+
+	// Public WebSocket endpoint for live match updates.
+	r.GET("/ws", ws.Handle)
 
 	// Protected API group: requires a valid access cookie + CSRF token for
 	// state-changing requests. Feature handlers will be added here.
