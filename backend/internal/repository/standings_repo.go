@@ -126,19 +126,21 @@ func (r *StandingsRepo) GetStandings(ctx context.Context, competitionID uint) ([
 // assist fields embedded in each goal event, so assist-only players appear.
 func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, limit int) ([]TopScorer, error) {
 	type goalEvent struct {
-		PlayerID        uint
-		PlayerName      string
-		TeamID          uint
-		AssistPlayerID  uint
+		PlayerID         uint
+		PlayerName       string
+		ClubID           uint
+		ClubName         string
+		AssistPlayerID   uint
 		AssistPlayerName string
-		MatchID         uint
+		MatchID          uint
 	}
 	var events []goalEvent
 	err := r.db.WithContext(ctx).
 		Model(&models.MatchEvent{}).
-		Select("e.player_id, e.player_name, e.team_id, e.assist_player_id, e.assist_player_name, e.match_id").
+		Select("e.player_id, e.player_name, c.id AS club_id, c.name AS club_name, e.assist_player_id, e.assist_player_name, e.match_id").
 		Table("match_events e").
 		Joins("JOIN matches m ON m.id = e.match_id").
+		Joins("LEFT JOIN clubs c ON c.external_id = CAST(e.team_id AS TEXT)").
 		Where("m.competition_id = ? AND e.event_type = 'goal'", competitionID).
 		Scan(&events).Error
 	if err != nil {
@@ -151,7 +153,7 @@ func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, l
 		// Scorer.
 		scorer := players[e.PlayerID]
 		if scorer == nil {
-			scorer = &TopScorer{PlayerID: e.PlayerID, PlayerName: e.PlayerName, ClubID: e.TeamID}
+			scorer = &TopScorer{PlayerID: e.PlayerID, PlayerName: e.PlayerName, ClubID: e.ClubID, ClubName: e.ClubName}
 			players[e.PlayerID] = scorer
 		}
 		scorer.Goals++
@@ -164,7 +166,7 @@ func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, l
 		if e.AssistPlayerID != 0 {
 			assister := players[e.AssistPlayerID]
 			if assister == nil {
-				assister = &TopScorer{PlayerID: e.AssistPlayerID, PlayerName: e.AssistPlayerName, ClubID: e.TeamID}
+				assister = &TopScorer{PlayerID: e.AssistPlayerID, PlayerName: e.AssistPlayerName, ClubID: e.ClubID, ClubName: e.ClubName}
 				players[e.AssistPlayerID] = assister
 			}
 			assister.Assists++
