@@ -180,6 +180,10 @@ func (p *APISportsProvider) GetLiveEvents(ctx context.Context, providerFixtureID
 				ID   int    `json:"id"`
 				Name string `json:"name"`
 			} `json:"player"`
+			Assist struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"assist"`
 			Type     string `json:"type"`
 			Detail   string `json:"detail"`
 			Comments string `json:"comments"`
@@ -197,6 +201,8 @@ func (p *APISportsProvider) GetLiveEvents(ctx context.Context, providerFixtureID
 			TeamID:            strconv.Itoa(e.Team.ID),
 			PlayerID:          strconv.Itoa(e.Player.ID),
 			PlayerName:        e.Player.Name,
+			AssistPlayerID:    strconv.Itoa(e.Assist.ID),
+			AssistPlayerName:  e.Assist.Name,
 			Detail:            e.Detail,
 			Comment:           e.Comments,
 		})
