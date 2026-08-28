@@ -26,7 +26,13 @@ func RegisterRoutes(r *gin.Engine, auth *handlers.AuthHandler, health *handlers.
 	protected := r.Group("/api")
 	protected.Use(middleware.Auth(jwtSecret), middleware.CSRFProtect())
 	{
-		_ = protected // feature routes land here next (matches, players, community, ...)
+		// Match query endpoints (read-only).
+		protected.GET("/matches", match.ListMatches)
+		protected.GET("/matches/:id", match.GetMatch)
+		protected.GET("/matches/:id/events", match.GetMatchEvents)
+		protected.GET("/matches/:id/lineup", match.GetMatchLineup)
+
+		// Match ingestion (admin-triggered sync).
 		protected.GET("/matches/sync", match.SyncCompetition)
 	}
 }
