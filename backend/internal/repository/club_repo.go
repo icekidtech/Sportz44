@@ -69,3 +69,16 @@ func (r *ClubRepo) FindByProviderExternal(ctx context.Context, provider, externa
 	}
 	return c.ID, nil
 }
+
+// FindByID returns a club by primary key.
+func (r *ClubRepo) FindByID(ctx context.Context, id uint) (*models.Club, error) {
+	var c models.Club
+	err := r.db.WithContext(ctx).First(&c, id).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &c, nil
+}
