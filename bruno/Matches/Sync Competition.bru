@@ -1,0 +1,11 @@
+meta {
+  name: Sync Competition
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{base_url}}/api/matches/sync?competition={{competition}}&season={{season}}
+  body: none
+  auth: none
+}
