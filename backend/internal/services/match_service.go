@@ -132,15 +132,16 @@ func (s *MatchService) GetMatchStats(ctx context.Context, matchID uint) ([]model
 
 // SyncMatchEvents fetches and upserts the events for a single match. This is
 // used to backfill finished matches — the live listener only polls matches
-// that are currently live.
+// that are currently live. Events are fetched from the same provider that
+// ingested the match, so the provider-specific external ID is always valid.
 func (s *MatchService) SyncMatchEvents(ctx context.Context, matchID uint) error {
 	m, err := s.matches.GetMatch(ctx, matchID)
 	if err != nil {
 		return err
 	}
-	lp := s.registry.Events(ctx)
+	lp := s.registry.EventsFor(ctx, m.Provider)
 	if lp == nil {
-		return fmt.Errorf("no healthy events provider available")
+		return fmt.Errorf("provider %q does not support events or is unavailable", m.Provider)
 	}
 	events, err := lp.GetLiveEvents(ctx, m.ExternalID)
 	if err != nil {
