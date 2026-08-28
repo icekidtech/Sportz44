@@ -149,6 +149,7 @@ func (p *FootballDataProvider) GetCompetitions(ctx context.Context, season strin
 			compSeason = seasonFromStartDate(c.CurrentSeason.StartDate)
 		}
 		comps = append(comps, Competition{
+			Provider:   p.Name(),
 			ProviderID: c.Code,
 			Name:       c.Name,
 			Type:       normalizeCompetitionType(c.Type),
@@ -217,6 +218,7 @@ func (p *FootballDataProvider) mapMatch(m jsonMatch, code, season string) Fixtur
 	}
 	matchDate, _ := time.Parse(time.RFC3339, m.UTCDate)
 	return Fixture{
+		Provider:        p.Name(),
 		ProviderID:      strconv.Itoa(m.ID),
 		CompetitionCode: code,
 		Season:          season,
@@ -241,6 +243,7 @@ func (p *FootballDataProvider) GetTeam(ctx context.Context, providerTeamID strin
 		return nil, err
 	}
 	return &Club{
+		Provider:   p.Name(),
 		ProviderID: strconv.Itoa(out.ID),
 		Name:       out.Name,
 		ShortName:  out.TLA,
