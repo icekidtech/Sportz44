@@ -91,6 +91,18 @@ func (l *MatchListener) poll(ctx context.Context) {
 			continue
 		}
 
+		// Fetch and upsert match statistics (if a stats provider is available).
+		if sp := l.registry.Stats(ctx); sp != nil {
+			stats, err := sp.GetMatchStats(ctx, f.ProviderID)
+			if err != nil {
+				l.log.Warnf("get match stats for %s: %v", f.ProviderID, err)
+			} else if len(stats) > 0 {
+				if err := l.matchRepo.UpsertMatchStats(ctx, m.ID, stats); err != nil {
+					l.log.Warnf("upsert stats for match %d: %v", m.ID, err)
+				}
+			}
+		}
+
 		// Publish the update to Redis for the WebSocket hub.
 		update := map[string]interface{}{
 			"match_id":    m.ID,
