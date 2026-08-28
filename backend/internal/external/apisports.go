@@ -143,6 +143,7 @@ func (p *APISportsProvider) mapFixture(f apiFixture) Fixture {
 	}
 	date, _ := time.Parse(time.RFC3339, f.Date)
 	return Fixture{
+		Provider:      p.Name(),
 		ProviderID:    strconv.Itoa(f.ID),
 		CompetitionID: f.League.ID,
 		Season:        "",
@@ -230,6 +231,7 @@ func (p *APISportsProvider) GetTeam(ctx context.Context, providerTeamID string) 
 	}
 	t := out.Response[0]
 	return &Club{
+		Provider:   p.Name(),
 		ProviderID: strconv.Itoa(t.Team.ID),
 		Name:       t.Team.Name,
 		ShortName:  t.Team.Code,
@@ -300,6 +302,7 @@ func (p *APISportsProvider) GetCompetitions(ctx context.Context, season string) 
 	comps := make([]Competition, 0, len(out.Response))
 	for _, c := range out.Response {
 		comps = append(comps, Competition{
+			Provider:   p.Name(),
 			ProviderID: strconv.Itoa(c.League.ID),
 			Name:       c.League.Name,
 			Type:       c.League.Type,
