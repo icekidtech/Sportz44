@@ -21,6 +21,7 @@ type StandingRow struct {
 	GoalsFor     int    `json:"goals_for"`
 	GoalsAgainst int    `json:"goals_against"`
 	GoalDiff     int    `json:"goal_diff"`
+	CleanSheets  int    `json:"clean_sheets"`
 	Points       int    `json:"points"`
 }
 
@@ -78,6 +79,14 @@ func (r *StandingsRepo) GetStandings(ctx context.Context, competitionID uint) ([
 		away.GoalsFor += m.AwayScore
 		away.GoalsAgainst += m.HomeScore
 
+		// Clean sheets: a team keeps one when it concedes zero goals.
+		if m.AwayScore == 0 {
+			home.CleanSheets++
+		}
+		if m.HomeScore == 0 {
+			away.CleanSheets++
+		}
+
 		switch {
 		case m.HomeScore > m.AwayScore:
 			home.Won++
@@ -113,44 +122,75 @@ func (r *StandingsRepo) GetStandings(ctx context.Context, competitionID uint) ([
 }
 
 // GetTopScorers computes the golden-boot standings for a competition from
-// goal events, sorted by goals, then assists.
+// goal events, sorted by goals, then assists. Assists are read from the
+// assist fields embedded in each goal event, so assist-only players appear.
 func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, limit int) ([]TopScorer, error) {
-	type agg struct {
-		PlayerID    uint
-		PlayerName  string
-		ClubID      uint
-		Goals       int
-		Assists     int
-		Appearances int
+	type goalEvent struct {
+		PlayerID        uint
+		PlayerName      string
+		TeamID          uint
+		AssistPlayerID  uint
+		AssistPlayerName string
+		MatchID         uint
 	}
-	var rows []agg
+	var events []goalEvent
 	err := r.db.WithContext(ctx).
 		Model(&models.MatchEvent{}).
-		Select(`e.player_id, e.player_name, e.team_id AS club_id,
-		        SUM(CASE WHEN e.event_type = 'goal' THEN 1 ELSE 0 END) AS goals,
-		        SUM(CASE WHEN e.event_type = 'assist' THEN 1 ELSE 0 END) AS assists,
-		        COUNT(DISTINCT e.match_id) AS appearances`).
+		Select("e.player_id, e.player_name, e.team_id, e.assist_player_id, e.assist_player_name, e.match_id").
 		Table("match_events e").
 		Joins("JOIN matches m ON m.id = e.match_id").
-		Where("m.competition_id = ? AND e.event_type IN ('goal','assist')", competitionID).
-		Group("e.player_id, e.player_name, e.team_id").
-		Order("goals DESC, assists DESC").
-		Limit(limit).
-		Scan(&rows).Error
+		Where("m.competition_id = ? AND e.event_type = 'goal'", competitionID).
+		Scan(&events).Error
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]TopScorer, 0, len(rows))
-	for _, rw := range rows {
-		out = append(out, TopScorer{
-			PlayerID:    rw.PlayerID,
-			PlayerName:  rw.PlayerName,
-			ClubID:      rw.ClubID,
-			Goals:       rw.Goals,
-			Assists:     rw.Assists,
-			Appearances: rw.Appearances,
-		})
+	players := map[uint]*TopScorer{}
+	appearances := map[uint]map[uint]bool{}
+	for _, e := range events {
+		// Scorer.
+		scorer := players[e.PlayerID]
+		if scorer == nil {
+			scorer = &TopScorer{PlayerID: e.PlayerID, PlayerName: e.PlayerName, ClubID: e.TeamID}
+			players[e.PlayerID] = scorer
+		}
+		scorer.Goals++
+		if appearances[e.PlayerID] == nil {
+			appearances[e.PlayerID] = map[uint]bool{}
+		}
+		appearances[e.PlayerID][e.MatchID] = true
+
+		// Assister (if any).
+		if e.AssistPlayerID != 0 {
+			assister := players[e.AssistPlayerID]
+			if assister == nil {
+				assister = &TopScorer{PlayerID: e.AssistPlayerID, PlayerName: e.AssistPlayerName, ClubID: e.TeamID}
+				players[e.AssistPlayerID] = assister
+			}
+			assister.Assists++
+			if appearances[e.AssistPlayerID] == nil {
+				appearances[e.AssistPlayerID] = map[uint]bool{}
+			}
+			appearances[e.AssistPlayerID][e.MatchID] = true
+		}
+	}
+
+	out := make([]TopScorer, 0, len(players))
+	for _, p := range players {
+		p.Appearances = len(appearances[p.PlayerID])
+		out = append(out, *p)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Goals != out[j].Goals {
+			return out[i].Goals > out[j].Goals
+		}
+		if out[i].Assists != out[j].Assists {
+			return out[i].Assists > out[j].Assists
+		}
+		return out[i].PlayerName < out[j].PlayerName
+	})
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
 	}
 	return out, nil
 }
