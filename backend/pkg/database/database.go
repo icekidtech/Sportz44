@@ -22,6 +22,7 @@ func Connect(dsn string) (*gorm.DB, error) {
 // AutoMigrate creates/updates all tables from the GORM models (source of truth).
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
+		&models.Competition{},
 		&models.Club{},
 		&models.Player{},
 		&models.PlayerSeasonStats{},
