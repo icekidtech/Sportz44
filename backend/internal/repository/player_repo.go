@@ -168,6 +168,11 @@ func (r *PlayerRepo) GetForm(ctx context.Context, playerID uint, limit int) ([]P
 			switch e.EventType {
 			case "goal":
 				entry.Goals++
+				// The player may also be credited as the assister on a goal
+				// scored by a teammate in the same match.
+				if e.AssistPlayerID == uint(p.APISportsID) {
+					entry.Assists++
+				}
 			case "card":
 				if e.Detail == "Red Card" {
 					entry.RedCards++
