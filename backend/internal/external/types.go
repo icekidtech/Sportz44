@@ -38,8 +38,10 @@ type Provider interface {
 type FixtureProvider interface {
 	Provider
 	// GetFixtures returns fixtures for a competition/season, optionally
-	// filtered by status (e.g. "scheduled", "live", "finished").
-	GetFixtures(ctx context.Context, competitionID int, season string, status string) ([]Fixture, error)
+	// filtered by status (e.g. "scheduled", "live", "finished"). The
+	// competitionID is the provider-specific identifier (e.g. "140" for
+	// API-Sports, "PD" for Football-Data).
+	GetFixtures(ctx context.Context, competitionID string, season string, status string) ([]Fixture, error)
 	// GetFixture returns a single fixture by its provider-specific ID.
 	GetFixture(ctx context.Context, providerFixtureID string) (*Fixture, error)
 }
@@ -69,6 +71,15 @@ type CompetitionProvider interface {
 	GetCompetitions(ctx context.Context, season string) ([]Competition, error)
 }
 
+// SeasonProvider is implemented by providers that can only serve certain
+// seasons (e.g. API-Sports free tier is limited to 2022-2024, Football-Data
+// free tier serves the current season). The registry uses this to pick the
+// right provider for a requested season.
+type SeasonProvider interface {
+	// SupportsSeason reports whether the provider can serve the given season.
+	SupportsSeason(season string) bool
+}
+
 // MediaProvider supplies enrichment assets (logos, photos, bios).
 type MediaProvider interface {
 	Provider
@@ -80,9 +91,10 @@ type MediaProvider interface {
 
 // Fixture is a provider-agnostic representation of a match.
 type Fixture struct {
-	ProviderID    string // provider-specific fixture ID
-	CompetitionID int    // provider-specific competition ID
-	Season        string
+	ProviderID      string // provider-specific fixture ID
+	CompetitionID   int    // provider-specific numeric competition ID (API-Sports)
+	CompetitionCode string // provider-specific competition code (Football-Data)
+	Season          string
 	HomeTeamID    string // provider-specific team ID
 	AwayTeamID    string // provider-specific team ID
 	HomeTeamName  string
