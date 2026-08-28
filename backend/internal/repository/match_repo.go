@@ -150,3 +150,50 @@ func (r *MatchRepo) GetMatchLineup(ctx context.Context, matchID uint) ([]models.
 		Find(&lineup).Error
 	return lineup, err
 }
+
+// FindByExternal returns a match by (provider, external_id).
+func (r *MatchRepo) FindByExternal(ctx context.Context, provider, externalID string) (*models.Match, error) {
+	var m models.Match
+	err := r.db.WithContext(ctx).
+		Where("provider = ? AND external_id = ?", provider, externalID).
+		First(&m).Error
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// UpsertMatchEvents inserts or updates events for a match. Events are keyed
+// by (match_id, minute, event_type, player_name) to avoid duplicates on
+// repeated polling.
+func (r *MatchRepo) UpsertMatchEvents(ctx context.Context, matchID uint, events []external.MatchEvent) error {
+	for _, e := range events {
+		teamID, _ := strconv.Atoi(e.TeamID)
+		playerID, _ := strconv.Atoi(e.PlayerID)
+		ev := models.MatchEvent{
+			MatchID:    matchID,
+			Minute:     e.Minute,
+			EventType:  e.EventType,
+			TeamID:     uint(teamID),
+			PlayerID:   uint(playerID),
+			PlayerName: e.PlayerName,
+			Detail:     e.Detail,
+			Comment:    e.Comment,
+		}
+		err := r.db.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "match_id"},
+					{Name: "minute"},
+					{Name: "event_type"},
+					{Name: "player_name"},
+				},
+				DoUpdates: clause.AssignmentColumns([]string{"detail", "comment"}),
+			}).
+			Create(&ev).Error
+		if err != nil {
+			return fmt.Errorf("upsert event for match %d: %w", matchID, err)
+		}
+	}
+	return nil
+}
