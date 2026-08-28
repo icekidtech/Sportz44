@@ -50,6 +50,11 @@ func (s *MatchService) SyncCompetition(ctx context.Context, competitionID, seaso
 	if len(fixtures) == 0 {
 		return fmt.Errorf("no fixtures returned for competition %s season %s", competitionID, season)
 	}
+	// Stamp the season onto each fixture so matches carry it (providers may
+	// not populate it themselves).
+	for i := range fixtures {
+		fixtures[i].Season = season
+	}
 
 	// 2. Upsert the competition metadata and resolve its internal ID.
 	provider := fixtures[0].Provider
@@ -123,4 +128,33 @@ func (s *MatchService) GetMatchEvents(ctx context.Context, matchID uint) ([]mode
 // GetMatchLineup returns the lineup for a match.
 func (s *MatchService) GetMatchLineup(ctx context.Context, matchID uint) ([]models.MatchLineup, error) {
 	return s.matches.GetMatchLineup(ctx, matchID)
+}
+
+// GetMatchStats returns the statistics for a match.
+func (s *MatchService) GetMatchStats(ctx context.Context, matchID uint) ([]models.MatchStat, error) {
+	return s.matches.GetMatchStats(ctx, matchID)
+}
+
+// SyncMatchEvents fetches and upserts the events for a single match. This is
+// used to backfill finished matches — the live listener only polls matches
+// that are currently live. Events are fetched from the same provider that
+// ingested the match, so the provider-specific external ID is always valid.
+func (s *MatchService) SyncMatchEvents(ctx context.Context, matchID uint) error {
+	m, err := s.matches.GetMatch(ctx, matchID)
+	if err != nil {
+		return err
+	}
+	// Use the provider that ingested the match (no health probe needed — we
+	// already know it's the right one, and a per-match /status call would be
+	// wasteful and flaky during bulk backfill).
+	p := s.registry.ByName(m.Provider)
+	lp, ok := p.(external.EventsProvider)
+	if !ok || lp == nil {
+		return fmt.Errorf("provider %q does not support events or is unavailable", m.Provider)
+	}
+	events, err := lp.GetLiveEvents(ctx, m.ExternalID)
+	if err != nil {
+		return fmt.Errorf("fetch events: %w", err)
+	}
+	return s.matches.UpsertMatchEvents(ctx, m.ID, events)
 }

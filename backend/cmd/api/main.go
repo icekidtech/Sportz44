@@ -74,20 +74,61 @@ func main() {
 	matchSvc := services.NewMatchService(matchRepo, competitionRepo, clubRepo, externalRegistry)
 	matchHandler := handlers.NewMatchHandler(matchSvc)
 
+	// Player service and handler
+	playerRepo := repository.NewPlayerRepo(db)
+	playerSvc := services.NewPlayerService(playerRepo, clubRepo, externalRegistry)
+	playerHandler := handlers.NewPlayerHandler(playerSvc)
+
+	// Standings service and handler
+	standingsRepo := repository.NewStandingsRepo(db)
+	standingsSvc := services.NewStandingsService(standingsRepo)
+	standingsHandler := handlers.NewStandingsHandler(standingsSvc)
+
+	// User subscriptions & notification preferences
+	userSvc := services.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userSvc)
+
 	// WebSocket live hub (subscribes to Redis match-events channel).
 	hub := ws.NewHub(rdb.Client)
 	wsHandler := handlers.NewWSHandler(hub, cfg.AllowedOrigins)
 
+	// Live match listener — runs in-process as a goroutine (no separate binary).
+	// Polls the realtime provider, upserts events, and publishes to Redis so the
+	// hub broadcasts them to connected WebSocket clients.
+	listener := services.NewMatchListener(externalRegistry, matchRepo, rdb, log, 30*time.Second)
+
 	// Router.
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	// Only trust proxy headers (X-Forwarded-For / X-Real-IP) from configured
+	// proxies. Empty TRUSTED_PROXIES means use the TCP peer address directly,
+	// which prevents clients from spoofing their IP for rate limiting.
+	r.SetTrustedProxies(cfg.TrustedProxies)
 	r.Use(middleware.Logging(log), gin.Recovery(), middleware.CORS(cfg.AllowedOrigins))
-	api.RegisterRoutes(r, authHandler, healthHandler, matchHandler, wsHandler, cfg.JWTSecret)
+	api.RegisterRoutes(
+		r,
+		authHandler,
+		healthHandler,
+		matchHandler,
+		playerHandler,
+		standingsHandler,
+		userHandler,
+		wsHandler,
+		rdb.Client,
+		cfg.RateLimitRequests,
+		cfg.RateLimitWindow,
+		cfg.JWTSecret,
+	)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.HTTPPort,
 		Handler: r,
 	}
+
+	// Start the match listener in the background.
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+	listener.Start(appCtx)
 
 	go func() {
 		log.Infof("Sportz44 API listening on :%s", cfg.HTTPPort)
@@ -101,6 +142,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Info("shutting down...")
+	appCancel() // stop the match listener
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

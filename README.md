@@ -71,23 +71,20 @@ A mobile-first, real-time football intelligence hub for African football fans �
 sportz44/
 ├── backend/
 │   ├── cmd/
-│   │   ├── api/              # Single API server (port 8080): REST + WebSocket + Twilio webhook + Admin UI
-│   │   ├── match-listener/   # Match event listener
-│   │   ├── news-aggregator/  # News aggregation service
-│   │   ├── odds-sync/        # Odds sync service
-│   │   ├── admin/            # Admin API server
-│   │   └── seed-admin/       # One-off: creates initial admin user
+│   │   └── api/              # Single API server (port 8080): REST + WebSocket + match listener goroutine
 │   ├── internal/
 │   │   ├── api/              # handlers, middleware, routes
 │   │   ├── models/           # GORM models (AutoMigrate source of truth)
-│   │   ├── services/         # Business logic
+│   │   ├── services/         # Business logic (incl. in-process match listener)
 │   │   ├── repository/       # Database access
-│   │   ├── external/         # API-Sports, Twilio, Firebase, Odds, RSS clients
-│   │   └── websocket/        # Hub / client
+│   │   ├── external/         # API-Sports, Football-Data, FlashScore, TheSportsDB clients
+│   │   └── ws/               # WebSocket hub / client
 │   ├── pkg/                  # config, database, cache, jwt, logger
-│   ├── deployments/          # systemd services + nginx config
 │   ├── go.mod
 │   └── .env.example
+├── deploy/                   # PM2, build/deploy scripts, nginx, VPS setup
+├── .github/workflows/        # CI + CD (separate files)
+├── bruno/                    # API test collection (Bruno)
 ├── mobile/                   # React Native app
 ├── admin-panel/              # React.js admin dashboard
 └── docs/                     # PRD, API docs, architecture, schema, deployment
@@ -121,19 +118,13 @@ redis-cli FLUSHALL
 # 4. Build all Go binaries
 cd backend
 go build -o bin/api ./cmd/api
-go build -o bin/match-listener ./cmd/match-listener
-go build -o bin/news-aggregator ./cmd/news-aggregator
-go build -o bin/odds-sync ./cmd/odds-sync
-go build -o bin/admin ./cmd/admin
-go build -o bin/seed-admin ./cmd/seed-admin
 
-# 5. Create the initial admin user (one-off; reads ADMIN_EMAIL/ADMIN_PASSWORD)
-./bin/seed-admin
-
-# 6. Run services
-./bin/api          # API server (port 8080): REST + WebSocket + webhook + admin UI
-# ... run background services (match-listener, news-aggregator, etc.) in separate terminals
+# 5. Run the API server (port 8080): REST + WebSocket + in-process match listener
+./bin/api
 ```
+
+> The API server runs the live match listener as an in-process goroutine, so
+> only **one** process is needed.
 
 ### Key Environment Variables
 
@@ -152,9 +143,14 @@ See [`docs/SPORT_PLATFORM_PRD.md` → Appendix B](docs/SPORT_PLATFORM_PRD.md) fo
 
 ## Deployment
 
-The backend is deployed to an Ubuntu VPS behind Nginx + systemd. The database schema is created automatically via GORM `AutoMigrate` on the first service boot — no manual migrations required.
+The backend is deployed to an Ubuntu VPS behind **Nginx + PM2**, with **GitHub
+Actions** for CI/CD. The database schema is created automatically via GORM
+`AutoMigrate` on first boot — no manual migrations required.
 
-For full deployment steps (systemd units, Nginx, Let's Encrypt SSL), see [`docs/SPORT_PLATFORM_PRD.md` → Section 11](docs/SPORT_PLATFORM_PRD.md).
+- **PM2 + CI/CD + VPS setup:** see [`deploy/README.md`](deploy/README.md)
+- **Nginx config:** [`deploy/nginx.conf`](deploy/nginx.conf)
+- **CI workflow:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+- **CD workflow:** [`.github/workflows/cd.yml`](.github/workflows/cd.yml)
 
 ---
 

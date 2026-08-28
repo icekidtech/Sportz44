@@ -1,0 +1,61 @@
+# CD — Continuous Deployment for the Sportz44 backend.
+#
+# Deploys to the production VPS whenever CI passes on the `main` branch.
+# Uses PM2 on the server to manage the single API process (which also runs
+# the live match listener as an in-process goroutine).
+#
+# Required GitHub repository secrets:
+#   VPS_HOST          — server IP or hostname
+#   VPS_USER          — SSH user (e.g. deploy)
+#   VPS_SSH_KEY       — private SSH key for the deploy user
+#   VPS_APP_DIR       — repo path on the server (default /opt/sportz44)
+#
+# The deploy script on the server pulls the latest code, builds the Go
+# binary, and reloads PM2. Secrets live in backend/.env on the server and
+# are never stored in the repo or CI.
+
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'deploy/**'
+      - '.github/workflows/cd.yml'
+
+  # Allow manual deploys from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    # Only deploy after CI has passed on main.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            APP_DIR="${VPS_APP_DIR:-/opt/sportz44}"
+            echo "==> Deploying Sportz44 to $APP_DIR"
+            cd "$APP_DIR"
+            git fetch --all --prune
+            git checkout main
+            git pull --ff-only
+            ./deploy/build.sh
+            pm2 reload deploy/ecosystem.config.js --update-env || pm2 start deploy/ecosystem.config.js
+            pm2 save
+            echo "==> Deploy complete"
+            pm2 status
+        env:
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}

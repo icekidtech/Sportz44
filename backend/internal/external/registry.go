@@ -95,10 +95,50 @@ func (r *Registry) Live(ctx context.Context) LiveProvider {
 	return nil
 }
 
+// EventsFor returns a healthy EventsProvider for the named provider, or nil.
+// Used to fetch events for a match using the same provider that ingested it,
+// so the provider-specific external ID is always valid.
+func (r *Registry) EventsFor(ctx context.Context, name string) EventsProvider {
+	for _, p := range r.All() {
+		if p.Name() == name && p.Healthy(ctx) {
+			if ep, ok := p.(EventsProvider); ok {
+				return ep
+			}
+		}
+	}
+	return nil
+}
+
+// ByName returns the provider with the given name, or nil. Unlike EventsFor it
+// does NOT require a health check — used when we already know the provider is
+// the one that ingested a record (e.g. backfilling events for a match whose
+// provider is stored on the row), so we avoid a redundant /status probe per
+// record and don't fail on transient health-check errors.
+func (r *Registry) ByName(name string) Provider {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.providers {
+		if p.Name() == name {
+			return p
+		}
+	}
+	return nil
+}
+
 // Squad returns a healthy SquadProvider, or nil.
 func (r *Registry) Squad(ctx context.Context) SquadProvider {
 	if p := r.ByKind(ctx, ProviderBulk); p != nil {
 		if sp, ok := p.(SquadProvider); ok {
+			return sp
+		}
+	}
+	return nil
+}
+
+// Stats returns a healthy StatsProvider, or nil.
+func (r *Registry) Stats(ctx context.Context) StatsProvider {
+	for _, p := range r.All() {
+		if sp, ok := p.(StatsProvider); ok && p.Healthy(ctx) {
 			return sp
 		}
 	}

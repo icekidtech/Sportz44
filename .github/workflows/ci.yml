@@ -1,0 +1,72 @@
+# CI — Continuous Integration for the Sportz44 backend.
+#
+# Runs on every push and pull request to main/development:
+#   - Format check (gofmt)
+#   - Static analysis (go vet)
+#   - Build all packages
+#
+# API testing is done via the Bruno collection (bruno/), so no Go unit tests
+# are run here.
+#
+# This workflow is intentionally separate from CD (deploy.yml) so that
+# deployment only happens after CI passes on the default branch.
+
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main, development]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache-dependency-path: backend/go.sum
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not gofmt-formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Build all packages
+        run: go build ./...

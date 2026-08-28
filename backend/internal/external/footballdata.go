@@ -235,6 +235,74 @@ func (p *FootballDataProvider) mapMatch(m jsonMatch, code, season string) Fixtur
 	}
 }
 
+// ---- LiveProvider ----
+
+// GetLiveEvents fetches the events for a match. Football-Data exposes events
+// for any match (live or finished) via /matches/{id}/events, including the
+// assist credited for each goal.
+func (p *FootballDataProvider) GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error) {
+	var out struct {
+		Events []struct {
+			Type   string `json:"type"`
+			Detail string `json:"detail"`
+			Time   struct {
+				Minute    int  `json:"minute"`
+				ExtraTime *int `json:"extraTime"`
+			} `json:"time"`
+			Team struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"team"`
+			Player struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"player"`
+			Assist struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"assist"`
+		} `json:"events"`
+	}
+	if err := p.client.get(ctx, "/matches/"+providerFixtureID+"/events", &out); err != nil {
+		return nil, err
+	}
+	events := make([]MatchEvent, 0, len(out.Events))
+	for _, e := range out.Events {
+		events = append(events, MatchEvent{
+			ProviderFixtureID: providerFixtureID,
+			Minute:            e.Time.Minute,
+			EventType:         normalizeFDEventType(e.Type),
+			TeamID:            strconv.Itoa(e.Team.ID),
+			PlayerID:          strconv.Itoa(e.Player.ID),
+			PlayerName:        e.Player.Name,
+			AssistPlayerID:    strconv.Itoa(e.Assist.ID),
+			AssistPlayerName:  e.Assist.Name,
+			Detail:            e.Detail,
+		})
+	}
+	return events, nil
+}
+
+// normalizeFDEventType maps Football-Data event types to our canonical set.
+func normalizeFDEventType(t string) string {
+	switch t {
+	case "GOAL":
+		return "goal"
+	case "OWN_GOAL":
+		return "own_goal"
+	case "PENALTY_SHOOTOUT_GOAL":
+		return "goal"
+	case "YELLOW_CARD":
+		return "card"
+	case "RED_CARD":
+		return "card"
+	case "SUBSTITUTION":
+		return "substitution"
+	default:
+		return "event"
+	}
+}
+
 // ---- SquadProvider ----
 
 func (p *FootballDataProvider) GetTeam(ctx context.Context, providerTeamID string) (*Club, error) {

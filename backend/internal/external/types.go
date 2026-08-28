@@ -55,6 +55,16 @@ type LiveProvider interface {
 	GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error)
 }
 
+// EventsProvider supplies events for a specific fixture (live or finished).
+// It is a lighter contract than LiveProvider: providers that can serve events
+// for any match (e.g. Football-Data) implement this without needing to expose
+// a live-match feed.
+type EventsProvider interface {
+	Provider
+	// GetLiveEvents returns the events for a match by its provider-specific ID.
+	GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error)
+}
+
 // SquadProvider supplies club and player data.
 type SquadProvider interface {
 	Provider
@@ -96,17 +106,17 @@ type Fixture struct {
 	CompetitionID   int    // provider-specific numeric competition ID (API-Sports)
 	CompetitionCode string // provider-specific competition code (Football-Data)
 	Season          string
-	HomeTeamID    string // provider-specific team ID
-	AwayTeamID    string // provider-specific team ID
-	HomeTeamName  string
-	AwayTeamName  string
-	MatchDate     time.Time
-	Status        string // scheduled | live | finished | postponed
-	HomeScore     int
-	AwayScore     int
-	Minute        int
-	Venue         string
-	Referee       string
+	HomeTeamID      string // provider-specific team ID
+	AwayTeamID      string // provider-specific team ID
+	HomeTeamName    string
+	AwayTeamName    string
+	MatchDate       time.Time
+	Status          string // scheduled | live | finished | postponed
+	HomeScore       int
+	AwayScore       int
+	Minute          int
+	Venue           string
+	Referee         string
 }
 
 // MatchEvent is a provider-agnostic representation of an in-match event.
@@ -117,6 +127,8 @@ type MatchEvent struct {
 	TeamID            string // provider-specific team ID
 	PlayerID          string // provider-specific player ID
 	PlayerName        string
+	AssistPlayerID    string // provider-specific player ID of the assister (goals only)
+	AssistPlayerName  string
 	Detail            string // e.g. "Yellow Card", "Normal Goal"
 	Comment           string
 }
@@ -146,6 +158,21 @@ type Player struct {
 	BirthDate    *time.Time
 	PhotoURL     string
 	Rating       float64
+}
+
+// MatchStat is a provider-agnostic representation of a per-team match
+// statistic (possession, shots, xG, corners, fouls, cards, ...).
+type MatchStat struct {
+	TeamID   string // provider-specific team ID
+	StatType string // possession | shots | shots_on_target | corners | fouls | yellow_cards | red_cards | xg | ...
+	Value    string // provider returns values as strings ("58%", "12", "1.34")
+}
+
+// StatsProvider supplies per-match statistics.
+type StatsProvider interface {
+	Provider
+	// GetMatchStats returns the statistics for a match.
+	GetMatchStats(ctx context.Context, providerFixtureID string) ([]MatchStat, error)
 }
 
 // Competition is a provider-agnostic representation of a league/cup.

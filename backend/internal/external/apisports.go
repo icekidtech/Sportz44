@@ -86,6 +86,7 @@ type apiFixture struct {
 		} `json:"fulltime"`
 	} `json:"score"`
 	Fixture struct {
+		ID     int `json:"id"`
 		Status struct {
 			Short string `json:"short"`
 		} `json:"status"`
@@ -144,7 +145,7 @@ func (p *APISportsProvider) mapFixture(f apiFixture) Fixture {
 	date, _ := time.Parse(time.RFC3339, f.Date)
 	return Fixture{
 		Provider:      p.Name(),
-		ProviderID:    strconv.Itoa(f.ID),
+		ProviderID:    strconv.Itoa(f.Fixture.ID),
 		CompetitionID: f.League.ID,
 		Season:        "",
 		HomeTeamID:    strconv.Itoa(f.Teams.Home.ID),
@@ -180,6 +181,10 @@ func (p *APISportsProvider) GetLiveEvents(ctx context.Context, providerFixtureID
 				ID   int    `json:"id"`
 				Name string `json:"name"`
 			} `json:"player"`
+			Assist struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"assist"`
 			Type     string `json:"type"`
 			Detail   string `json:"detail"`
 			Comments string `json:"comments"`
@@ -197,6 +202,8 @@ func (p *APISportsProvider) GetLiveEvents(ctx context.Context, providerFixtureID
 			TeamID:            strconv.Itoa(e.Team.ID),
 			PlayerID:          strconv.Itoa(e.Player.ID),
 			PlayerName:        e.Player.Name,
+			AssistPlayerID:    strconv.Itoa(e.Assist.ID),
+			AssistPlayerName:  e.Assist.Name,
 			Detail:            e.Detail,
 			Comment:           e.Comments,
 		})
@@ -343,5 +350,104 @@ func normalizeEventType(t string) string {
 		return "var"
 	default:
 		return "event"
+	}
+}
+
+// ---- StatsProvider ----
+
+func (p *APISportsProvider) GetMatchStats(ctx context.Context, providerFixtureID string) ([]MatchStat, error) {
+	path := "/fixtures/statistics?fixture=" + providerFixtureID
+	var out struct {
+		Response []struct {
+			Team struct {
+				ID int `json:"id"`
+			} `json:"team"`
+			Statistics []struct {
+				Type  string `json:"type"`
+				Value any    `json:"value"`
+			} `json:"statistics"`
+		} `json:"response"`
+	}
+	if err := p.client.get(ctx, path, &out); err != nil {
+		return nil, err
+	}
+	stats := make([]MatchStat, 0, len(out.Response)*8)
+	for _, team := range out.Response {
+		teamID := strconv.Itoa(team.Team.ID)
+		for _, s := range team.Statistics {
+			stats = append(stats, MatchStat{
+				TeamID:   teamID,
+				StatType: normalizeStatType(s.Type),
+				Value:    statValueToString(s.Value),
+			})
+		}
+	}
+	return stats, nil
+}
+
+// normalizeStatType maps API-Sports statistic names to our canonical set.
+func normalizeStatType(t string) string {
+	switch t {
+	case "Ball Possession":
+		return "possession"
+	case "Total Shots":
+		return "shots"
+	case "Shots on Goal":
+		return "shots_on_target"
+	case "Shots off Goal":
+		return "shots_off_target"
+	case "Blocked Shots":
+		return "blocked_shots"
+	case "Corner Kicks":
+		return "corners"
+	case "Fouls":
+		return "fouls"
+	case "Yellow Cards":
+		return "yellow_cards"
+	case "Red Cards":
+		return "red_cards"
+	case "Total passes":
+		return "passes"
+	case "Pass accuracy":
+		return "pass_accuracy"
+	case "Expected Goals (xG)":
+		return "xg"
+	case "Expected Assists (xA)":
+		return "xa"
+	case "Offsides":
+		return "offsides"
+	case "Hit Woodwork":
+		return "hit_woodwork"
+	case "Saves":
+		return "saves"
+	case "Goalkeeper Saves":
+		return "saves"
+	case "Throw-ins":
+		return "throw_ins"
+	case "Attacks":
+		return "attacks"
+	case "Dangerous Attacks":
+		return "dangerous_attacks"
+	default:
+		return t
+	}
+}
+
+// statValueToString converts the provider's value (string, int, float, or nil)
+// into a stable string representation.
+func statValueToString(v any) string {
+	switch val := v.(type) {
+	case nil:
+		return ""
+	case string:
+		return val
+	case float64:
+		return strconv.FormatFloat(val, 'f', -1, 64)
+	case int:
+		return strconv.Itoa(val)
+	case bool:
+		return strconv.FormatBool(val)
+	default:
+		return fmt.Sprintf("%v", val)
 	}
 }
