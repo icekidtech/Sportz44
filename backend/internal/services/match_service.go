@@ -71,17 +71,19 @@ func (s *MatchService) SyncCompetition(ctx context.Context, competitionID, seaso
 		if !seen[f.HomeTeamID] {
 			seen[f.HomeTeamID] = true
 			clubs = append(clubs, external.Club{
-				Provider:   provider,
-				ProviderID: f.HomeTeamID,
-				Name:       f.HomeTeamName,
+				Provider:      provider,
+				ProviderID:    f.HomeTeamID,
+				Name:          f.HomeTeamName,
+				CompetitionID: int(internalCompID),
 			})
 		}
 		if !seen[f.AwayTeamID] {
 			seen[f.AwayTeamID] = true
 			clubs = append(clubs, external.Club{
-				Provider:   provider,
-				ProviderID: f.AwayTeamID,
-				Name:       f.AwayTeamName,
+				Provider:      provider,
+				ProviderID:    f.AwayTeamID,
+				Name:          f.AwayTeamName,
+				CompetitionID: int(internalCompID),
 			})
 		}
 	}
