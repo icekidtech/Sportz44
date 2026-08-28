@@ -5,7 +5,9 @@ import "time"
 // Player represents a footballer belonging to a club.
 type Player struct {
 	ID           uint       `gorm:"primaryKey" json:"id"`
-	APISportsID  int        `gorm:"uniqueIndex" json:"api_sports_id"`
+	Provider     string    `gorm:"size:50;uniqueIndex:idx_player_provider_external,priority:1" json:"provider"`
+	ExternalID   string    `gorm:"size:50;uniqueIndex:idx_player_provider_external,priority:2" json:"external_id"`
+	APISportsID  int        `gorm:"uniqueIndex" json:"api_sports_id"` // legacy compat
 	ClubID       uint       `gorm:"index" json:"club_id"`
 	Name         string     `gorm:"size:100;not null" json:"name"`
 	Position     string     `gorm:"size:50" json:"position"`
