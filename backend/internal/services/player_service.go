@@ -31,7 +31,7 @@ func (s *PlayerService) SyncSquad(ctx context.Context, clubID uint) error {
 	if sp == nil {
 		return errors.New("no squad provider available")
 	}
-	squad, err := sp.GetSquad(ctx, club.ProviderID)
+	squad, err := sp.GetSquad(ctx, club.ExternalID)
 	if err != nil {
 		return err
 	}
