@@ -5,6 +5,8 @@ import "time"
 // Match represents a football fixture (scheduled, live, or finished).
 type Match struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
+	Provider      string    `gorm:"size:50;uniqueIndex:idx_match_provider_external,priority:1" json:"provider"`
+	ExternalID    string    `gorm:"size:50;uniqueIndex:idx_match_provider_external,priority:2" json:"external_id"`
 	APISportsID   int       `gorm:"uniqueIndex" json:"api_sports_id"`
 	CompetitionID uint      `gorm:"index" json:"competition_id"`
 	Season        string    `gorm:"size:20" json:"season"`
