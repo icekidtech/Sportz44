@@ -109,6 +109,22 @@ func (r *Registry) EventsFor(ctx context.Context, name string) EventsProvider {
 	return nil
 }
 
+// ByName returns the provider with the given name, or nil. Unlike EventsFor it
+// does NOT require a health check — used when we already know the provider is
+// the one that ingested a record (e.g. backfilling events for a match whose
+// provider is stored on the row), so we avoid a redundant /status probe per
+// record and don't fail on transient health-check errors.
+func (r *Registry) ByName(name string) Provider {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.providers {
+		if p.Name() == name {
+			return p
+		}
+	}
+	return nil
+}
+
 // Squad returns a healthy SquadProvider, or nil.
 func (r *Registry) Squad(ctx context.Context) SquadProvider {
 	if p := r.ByKind(ctx, ProviderBulk); p != nil {

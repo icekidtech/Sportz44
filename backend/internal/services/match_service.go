@@ -144,8 +144,12 @@ func (s *MatchService) SyncMatchEvents(ctx context.Context, matchID uint) error 
 	if err != nil {
 		return err
 	}
-	lp := s.registry.EventsFor(ctx, m.Provider)
-	if lp == nil {
+	// Use the provider that ingested the match (no health probe needed — we
+	// already know it's the right one, and a per-match /status call would be
+	// wasteful and flaky during bulk backfill).
+	p := s.registry.ByName(m.Provider)
+	lp, ok := p.(external.EventsProvider)
+	if !ok || lp == nil {
 		return fmt.Errorf("provider %q does not support events or is unavailable", m.Provider)
 	}
 	events, err := lp.GetLiveEvents(ctx, m.ExternalID)
