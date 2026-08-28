@@ -20,6 +20,8 @@ type Config struct {
 	FlashScoreURL  string
 	TheSportsDBKey string
 	TheSportsDBURL string
+	FootballDataKey string
+	FootballDataURL string
 	JWTSecret      string
 	JWTExpiry      time.Duration
 	RefreshExpiry  time.Duration
@@ -43,6 +45,8 @@ func Load() (*Config, error) {
 		FlashScoreURL:  getEnv("FLASHSCORE_URL", ""),
 		TheSportsDBKey: os.Getenv("THESPORTSDB_KEY"),
 		TheSportsDBURL: getEnv("THESPORTSDB_URL", ""),
+		FootballDataKey: os.Getenv("FOOTBALL_DATA_KEY"),
+		FootballDataURL: getEnv("FOOTBALL_DATA_URL", ""),
 		JWTSecret:      os.Getenv("JWT_SECRET"),
 		AllowedOrigins: parseOrigins(getEnv("ALLOWED_ORIGINS", "*")),
 		CookieDomain:   getEnv("COOKIE_DOMAIN", ""),
