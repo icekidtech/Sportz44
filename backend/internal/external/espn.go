@@ -141,13 +141,13 @@ type espnDetail struct {
 	Team struct {
 		ID string `json:"id"`
 	} `json:"team"`
-	ScoreValue       int  `json:"scoreValue"`
-	ScoringPlay      bool `json:"scoringPlay"`
-	RedCard          bool `json:"redCard"`
-	YellowCard       bool `json:"yellowCard"`
-	PenaltyKick      bool `json:"penaltyKick"`
-	OwnGoal          bool `json:"ownGoal"`
-	Shootout         bool `json:"shootout"`
+	ScoreValue  int  `json:"scoreValue"`
+	ScoringPlay bool `json:"scoringPlay"`
+	RedCard     bool `json:"redCard"`
+	YellowCard  bool `json:"yellowCard"`
+	PenaltyKick bool `json:"penaltyKick"`
+	OwnGoal     bool `json:"ownGoal"`
+	Shootout    bool `json:"shootout"`
 	// Participants holds the players involved in the event. For goals,
 	// participants[0] is the scorer and participants[1] (if present) is the
 	// assister. For cards, participants[0] is the carded player. For
@@ -203,10 +203,10 @@ func (p *ESPNProvider) GetFixture(ctx context.Context, providerFixtureID string)
 	var out struct {
 		Header struct {
 			Competitions []struct {
-				ID          string          `json:"id"`
-				Date        string          `json:"date"`
-				Status      espnStatus      `json:"status"`
-				Venue       struct {
+				ID     string     `json:"id"`
+				Date   string     `json:"date"`
+				Status espnStatus `json:"status"`
+				Venue  struct {
 					FullName string `json:"fullName"`
 				} `json:"venue"`
 				Competitors []espnCompetitor `json:"competitors"`
