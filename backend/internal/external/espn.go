@@ -148,10 +148,17 @@ type espnDetail struct {
 	PenaltyKick      bool `json:"penaltyKick"`
 	OwnGoal          bool `json:"ownGoal"`
 	Shootout         bool `json:"shootout"`
-	AthletesInvolved []struct {
-		ID          string `json:"id"`
-		DisplayName string `json:"displayName"`
-	} `json:"athletesInvolved"`
+	// Participants holds the players involved in the event. For goals,
+	// participants[0] is the scorer and participants[1] (if present) is the
+	// assister. For cards, participants[0] is the carded player. For
+	// substitutions, participants[0] is the player coming off and
+	// participants[1] is the player coming on.
+	Participants []struct {
+		Athlete struct {
+			ID          string `json:"id"`
+			DisplayName string `json:"displayName"`
+		} `json:"athlete"`
+	} `json:"participants"`
 }
 
 // ---- FixtureProvider ----
@@ -195,26 +202,24 @@ func (p *ESPNProvider) GetFixture(ctx context.Context, providerFixtureID string)
 	path := "/" + slug + "/summary?event=" + eventID
 	var out struct {
 		Header struct {
-			ID   string `json:"id"`
-			Date string `json:"date"`
+			Competitions []struct {
+				ID          string          `json:"id"`
+				Date        string          `json:"date"`
+				Status      espnStatus      `json:"status"`
+				Venue       struct {
+					FullName string `json:"fullName"`
+				} `json:"venue"`
+				Competitors []espnCompetitor `json:"competitors"`
+			} `json:"competitions"`
 		} `json:"header"`
-		Competitions []struct {
-			ID     string     `json:"id"`
-			Date   string     `json:"date"`
-			Status espnStatus `json:"status"`
-			Venue  struct {
-				FullName string `json:"fullName"`
-			} `json:"venue"`
-			Competitors []espnCompetitor `json:"competitors"`
-		} `json:"competitions"`
 	}
 	if err := p.client.get(ctx, path, &out); err != nil {
 		return nil, err
 	}
-	if len(out.Competitions) == 0 {
+	if len(out.Header.Competitions) == 0 {
 		return nil, fmt.Errorf("fixture %s not found", providerFixtureID)
 	}
-	c := out.Competitions[0]
+	c := out.Header.Competitions[0]
 	f := p.mapFixture(slug, eventID, c.Date, c.Status, c.Venue.FullName, c.Competitors)
 	return &f, nil
 }
@@ -304,16 +309,16 @@ func (p *ESPNProvider) GetLiveEvents(ctx context.Context, providerFixtureID stri
 			TeamID:            d.Team.ID,
 			Detail:            d.Type.Text,
 		}
-		// athletesInvolved[0] is the primary player (scorer for goals, the
-		// carded player for cards). For goals, athletesInvolved[1] (if any) is
-		// the assister.
-		if len(d.AthletesInvolved) > 0 {
-			ev.PlayerID = d.AthletesInvolved[0].ID
-			ev.PlayerName = d.AthletesInvolved[0].DisplayName
+		// participants[0] is the primary player (scorer for goals, the carded
+		// player for cards). For goals, participants[1] (if any) is the
+		// assister.
+		if len(d.Participants) > 0 {
+			ev.PlayerID = d.Participants[0].Athlete.ID
+			ev.PlayerName = d.Participants[0].Athlete.DisplayName
 		}
-		if ev.EventType == "goal" && len(d.AthletesInvolved) > 1 {
-			ev.AssistPlayerID = d.AthletesInvolved[1].ID
-			ev.AssistPlayerName = d.AthletesInvolved[1].DisplayName
+		if ev.EventType == "goal" && len(d.Participants) > 1 {
+			ev.AssistPlayerID = d.Participants[1].Athlete.ID
+			ev.AssistPlayerName = d.Participants[1].Athlete.DisplayName
 		}
 		events = append(events, ev)
 	}
