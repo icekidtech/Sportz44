@@ -25,15 +25,14 @@ func main() {
 	}
 
 	api := external.NewAPISportsProvider(apiKey, apiHost)
-	fs := external.NewFlashScoreProvider(os.Getenv("FLASHSCORE_URL"))
-	tsdb := external.NewTheSportsDBProvider(os.Getenv("THESPORTSDB_KEY"), os.Getenv("THESPORTSDB_URL"))
+	espn := external.NewESPNProvider(os.Getenv("ESPN_URL"))
 
 	// Football-Data provider (current season free tier)
 	fdKey := os.Getenv("FOOTBALL_DATA_KEY")
 	fdURL := os.Getenv("FOOTBALL_DATA_URL")
 	fd := external.NewFootballDataProvider(fdKey, fdURL)
 
-	reg := external.NewRegistry(api, fd, fs, tsdb)
+	reg := external.NewRegistry(espn, api, fd)
 	fmt.Println("Providers registered:", len(reg.All()))
 
 	// 1. Competitions (La Liga = 140)
@@ -92,12 +91,22 @@ func main() {
 		fmt.Println("Fixtures: no data")
 	}
 
-	// 5. Live matches (realtime provider)
-	live, err := fs.GetLiveMatches(ctx)
+	// 5. Live matches (ESPN realtime provider)
+	live, err := espn.GetLiveMatches(ctx)
 	if err != nil {
-		fmt.Println("FlashScore live error:", err)
+		fmt.Println("ESPN live error:", err)
 	} else {
-		fmt.Printf("FlashScore live matches: %d\n", len(live))
+		fmt.Printf("ESPN live matches: %d\n", len(live))
+	}
+
+	// 5a. ESPN current-season fixtures (Premier League)
+	espnFixtures, err := espn.GetFixtures(ctx, "eng.1", external.CurrentSeason(), "")
+	if err != nil {
+		fmt.Println("ESPN GetFixtures error:", err)
+	} else if len(espnFixtures) > 0 {
+		fmt.Printf("ESPN fixtures (PL): %d (first: %+v)\n", len(espnFixtures), espnFixtures[0])
+	} else {
+		fmt.Println("ESPN fixtures: no data")
 	}
 
 	// 6. Registry failover checks
@@ -110,10 +119,5 @@ func main() {
 		fmt.Println("Realtime provider:", p.Name())
 	} else {
 		fmt.Println("Realtime provider: none healthy")
-	}
-	if p := reg.ByKind(ctx, external.ProviderMedia); p != nil {
-		fmt.Println("Media provider:", p.Name())
-	} else {
-		fmt.Println("Media provider: none healthy")
 	}
 }

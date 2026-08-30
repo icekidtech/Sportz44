@@ -17,9 +17,7 @@ type Config struct {
 	RedisURL          string
 	APISportsKey      string
 	APISportsHost     string
-	FlashScoreURL     string
-	TheSportsDBKey    string
-	TheSportsDBURL    string
+	ESPNURL           string
 	FootballDataKey   string
 	FootballDataURL   string
 	JWTSecret         string
@@ -45,9 +43,7 @@ func Load() (*Config, error) {
 		RedisURL:        getEnv("REDIS_URL", ""),
 		APISportsKey:    os.Getenv("API_SPORTS_KEY"),
 		APISportsHost:   getEnv("API_SPORTS_HOST", ""),
-		FlashScoreURL:   getEnv("FLASHSCORE_URL", ""),
-		TheSportsDBKey:  os.Getenv("THESPORTSDB_KEY"),
-		TheSportsDBURL:  getEnv("THESPORTSDB_URL", ""),
+		ESPNURL:         getEnv("ESPN_URL", ""),
 		FootballDataKey: os.Getenv("FOOTBALL_DATA_KEY"),
 		FootballDataURL: getEnv("FOOTBALL_DATA_URL", ""),
 		JWTSecret:       os.Getenv("JWT_SECRET"),

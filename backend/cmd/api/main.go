@@ -62,10 +62,9 @@ func main() {
 
 	// External providers & registry
 	apiSports := external.NewAPISportsProvider(cfg.APISportsKey, cfg.APISportsHost)
+	espn := external.NewESPNProvider(cfg.ESPNURL)
 	footballData := external.NewFootballDataProvider(cfg.FootballDataKey, cfg.FootballDataURL)
-	flashScore := external.NewFlashScoreProvider(cfg.FlashScoreURL)
-	tsdb := external.NewTheSportsDBProvider(cfg.TheSportsDBKey, cfg.TheSportsDBURL)
-	externalRegistry := external.NewRegistry(apiSports, footballData, flashScore, tsdb)
+	externalRegistry := external.NewRegistry(espn, apiSports, footballData)
 
 	// Match ingestion service and handler
 	matchRepo := repository.NewMatchRepo(db)
