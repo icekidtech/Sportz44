@@ -160,6 +160,10 @@ type espnDetail struct {
 // ESPN's scoreboard endpoint is date-based; we fetch the current day's games
 // for the slug. The season parameter is accepted for interface compatibility
 // but ESPN serves the current season only.
+//
+// The returned fixture's ProviderID is encoded as "{leagueSlug}:{eventID}"
+// (e.g. "eng.1:401879294") so that GetLiveEvents / GetMatchStats can resolve
+// the league slug needed to call the summary endpoint.
 func (p *ESPNProvider) GetFixtures(ctx context.Context, competitionID string, season, status string) ([]Fixture, error) {
 	path := "/" + competitionID + "/scoreboard"
 	var out espnScoreboard
@@ -172,7 +176,7 @@ func (p *ESPNProvider) GetFixtures(ctx context.Context, competitionID string, se
 			continue
 		}
 		c := e.Competitions[0]
-		f := p.mapFixture(e.ID, c.Date, c.Status, c.Venue.FullName, c.Competitors)
+		f := p.mapFixture(competitionID, e.ID, c.Date, c.Status, c.Venue.FullName, c.Competitors)
 		if status != "" && f.Status != status {
 			continue
 		}
@@ -181,10 +185,14 @@ func (p *ESPNProvider) GetFixtures(ctx context.Context, competitionID string, se
 	return fixtures, nil
 }
 
-// GetFixture returns a single fixture by its ESPN event ID.
+// GetFixture returns a single fixture by its ESPN external ID
+// ("{leagueSlug}:{eventID}").
 func (p *ESPNProvider) GetFixture(ctx context.Context, providerFixtureID string) (*Fixture, error) {
-	// The summary endpoint returns a single event's full detail.
-	path := "/summary?event=" + providerFixtureID
+	slug, eventID, err := parseESPNID(providerFixtureID)
+	if err != nil {
+		return nil, err
+	}
+	path := "/" + slug + "/summary?event=" + eventID
 	var out struct {
 		Header struct {
 			ID   string `json:"id"`
@@ -207,11 +215,11 @@ func (p *ESPNProvider) GetFixture(ctx context.Context, providerFixtureID string)
 		return nil, fmt.Errorf("fixture %s not found", providerFixtureID)
 	}
 	c := out.Competitions[0]
-	f := p.mapFixture(providerFixtureID, c.Date, c.Status, c.Venue.FullName, c.Competitors)
+	f := p.mapFixture(slug, eventID, c.Date, c.Status, c.Venue.FullName, c.Competitors)
 	return &f, nil
 }
 
-func (p *ESPNProvider) mapFixture(id, date string, status espnStatus, venue string, competitors []espnCompetitor) Fixture {
+func (p *ESPNProvider) mapFixture(slug, id, date string, status espnStatus, venue string, competitors []espnCompetitor) Fixture {
 	var home, away espnCompetitor
 	for _, c := range competitors {
 		switch c.HomeAway {
@@ -226,7 +234,7 @@ func (p *ESPNProvider) mapFixture(id, date string, status espnStatus, venue stri
 	parsed, _ := time.Parse(espnTimeLayout, date)
 	return Fixture{
 		Provider:     p.Name(),
-		ProviderID:   id,
+		ProviderID:   slug + ":" + id,
 		HomeTeamID:   home.Team.ID,
 		AwayTeamID:   away.Team.ID,
 		HomeTeamName: home.Team.DisplayName,
@@ -238,6 +246,16 @@ func (p *ESPNProvider) mapFixture(id, date string, status espnStatus, venue stri
 		Minute:       espnMinute(status),
 		Venue:        venue,
 	}
+}
+
+// parseESPNID splits an ESPN external ID ("{leagueSlug}:{eventID}") into its
+// league slug and event ID.
+func parseESPNID(id string) (slug, eventID string, err error) {
+	idx := strings.LastIndex(id, ":")
+	if idx < 0 {
+		return "", "", fmt.Errorf("invalid ESPN id %q (expected \"{slug}:{eventID}\")", id)
+	}
+	return id[:idx], id[idx+1:], nil
 }
 
 // espnTimeLayout matches ESPN's date format (e.g. "2026-08-28T19:00Z"), which
@@ -262,24 +280,23 @@ func (p *ESPNProvider) GetLiveMatches(ctx context.Context) ([]Fixture, error) {
 	return live, nil
 }
 
-// GetLiveEvents returns the events for a match by its ESPN event ID. ESPN
-// embeds the events in the scoreboard's details array; we fetch the summary
-// endpoint for the specific event to get its full event list.
+// GetLiveEvents returns the events for a match by its ESPN external ID
+// ("{leagueSlug}:{eventID}"). ESPN exposes match events in the summary
+// endpoint's top-level "keyEvents" array.
 func (p *ESPNProvider) GetLiveEvents(ctx context.Context, providerFixtureID string) ([]MatchEvent, error) {
-	path := "/summary?event=" + providerFixtureID
+	slug, eventID, err := parseESPNID(providerFixtureID)
+	if err != nil {
+		return nil, err
+	}
+	path := "/" + slug + "/summary?event=" + eventID
 	var out struct {
-		Competitions []struct {
-			Details []espnDetail `json:"details"`
-		} `json:"competitions"`
+		KeyEvents []espnDetail `json:"keyEvents"`
 	}
 	if err := p.client.get(ctx, path, &out); err != nil {
 		return nil, err
 	}
-	if len(out.Competitions) == 0 {
-		return nil, fmt.Errorf("fixture %s not found", providerFixtureID)
-	}
-	events := make([]MatchEvent, 0, len(out.Competitions[0].Details))
-	for _, d := range out.Competitions[0].Details {
+	events := make([]MatchEvent, 0, len(out.KeyEvents))
+	for _, d := range out.KeyEvents {
 		ev := MatchEvent{
 			ProviderFixtureID: providerFixtureID,
 			Minute:            espnMinuteFromClock(d.Clock.DisplayValue),
@@ -306,23 +323,29 @@ func (p *ESPNProvider) GetLiveEvents(ctx context.Context, providerFixtureID stri
 // ---- StatsProvider ----
 
 func (p *ESPNProvider) GetMatchStats(ctx context.Context, providerFixtureID string) ([]MatchStat, error) {
-	path := "/summary?event=" + providerFixtureID
+	slug, eventID, err := parseESPNID(providerFixtureID)
+	if err != nil {
+		return nil, err
+	}
+	path := "/" + slug + "/summary?event=" + eventID
 	var out struct {
-		Competitions []struct {
-			Competitors []espnCompetitor `json:"competitors"`
-		} `json:"competitions"`
+		Boxscore struct {
+			Teams []struct {
+				Team struct {
+					ID string `json:"id"`
+				} `json:"team"`
+				Statistics []espnStat `json:"statistics"`
+			} `json:"teams"`
+		} `json:"boxscore"`
 	}
 	if err := p.client.get(ctx, path, &out); err != nil {
 		return nil, err
 	}
-	if len(out.Competitions) == 0 {
-		return nil, fmt.Errorf("fixture %s not found", providerFixtureID)
-	}
-	stats := make([]MatchStat, 0, len(out.Competitions[0].Competitors)*8)
-	for _, c := range out.Competitions[0].Competitors {
-		for _, s := range c.Statistics {
+	stats := make([]MatchStat, 0, len(out.Boxscore.Teams)*8)
+	for _, team := range out.Boxscore.Teams {
+		for _, s := range team.Statistics {
 			stats = append(stats, MatchStat{
-				TeamID:   c.Team.ID,
+				TeamID:   team.Team.ID,
 				StatType: espnStatType(s.Name),
 				Value:    s.DisplayValue,
 			})
