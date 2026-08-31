@@ -151,6 +151,38 @@ func (r *MatchRepo) GetMatchLineup(ctx context.Context, matchID uint) ([]models.
 	return lineup, err
 }
 
+// UpsertMatchLineup inserts or updates lineup entries for a match, keyed by
+// (match_id, team_id, player_id).
+func (r *MatchRepo) UpsertMatchLineup(ctx context.Context, matchID uint, entries []external.MatchLineupEntry) error {
+	for _, e := range entries {
+		teamID, _ := strconv.Atoi(e.TeamID)
+		playerID, _ := strconv.Atoi(e.PlayerID)
+		lu := models.MatchLineup{
+			MatchID:    matchID,
+			TeamID:     uint(teamID),
+			PlayerID:   uint(playerID),
+			PlayerName: e.PlayerName,
+			Position:   e.Position,
+			Number:     e.Number,
+			IsStarter:  e.IsStarter,
+		}
+		err := r.db.WithContext(ctx).
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "match_id"},
+					{Name: "team_id"},
+					{Name: "player_id"},
+				},
+				DoUpdates: clause.AssignmentColumns([]string{"player_name", "position", "number", "is_starter"}),
+			}).
+			Create(&lu).Error
+		if err != nil {
+			return fmt.Errorf("upsert lineup for match %d: %w", matchID, err)
+		}
+	}
+	return nil
+}
+
 // FindByExternal returns a match by (provider, external_id).
 func (r *MatchRepo) FindByExternal(ctx context.Context, provider, externalID string) (*models.Match, error) {
 	var m models.Match
