@@ -150,6 +150,49 @@ func (h *MatchHandler) SyncMatchEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "synced"})
 }
 
+// SyncMatchLineup triggers a backfill of the lineup for a single match.
+func (h *MatchHandler) SyncMatchLineup(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid match id"})
+		return
+	}
+	if err := h.svc.SyncMatchLineup(c.Request.Context(), uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "synced"})
+}
+
+// SyncMatchStats triggers a backfill of the statistics for a single match.
+func (h *MatchHandler) SyncMatchStats(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid match id"})
+		return
+	}
+	if err := h.svc.SyncMatchStats(c.Request.Context(), uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "synced"})
+}
+
+// SyncMatchDetails triggers a backfill of events, lineup, and stats for a
+// single match in one call.
+func (h *MatchHandler) SyncMatchDetails(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid match id"})
+		return
+	}
+	if err := h.svc.SyncMatchDetails(c.Request.Context(), uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "synced"})
+}
+
 func atoiDefault(s string, def int) int {
 	if s == "" {
 		return def
