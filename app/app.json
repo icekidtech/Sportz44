@@ -1,11 +1,20 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Sportz44",
+    "slug": "sportz44",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:8080"
+    },
+    "plugins": [["expo-splash-screen", { "backgroundColor": "#121212", "image": "./assets/splash-icon.png", "imageWidth": 200 }]],
     "ios": {
       "supportsTablet": true
     },
