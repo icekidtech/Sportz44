@@ -40,7 +40,7 @@ func NewESPNProvider(baseURL string) *ESPNProvider {
 }
 
 func (p *ESPNProvider) Name() string       { return "espn" }
-func (p *ESPNProvider) Kind() ProviderKind { return ProviderBulk }
+func (p *ESPNProvider) Kind() ProviderKind { return ProviderRealtime }
 
 func (p *ESPNProvider) Healthy(ctx context.Context) bool {
 	// Probe a well-known league (Premier League). The /teams endpoint returns
