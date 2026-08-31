@@ -22,13 +22,13 @@ export function MatchDetailScreen({ route, navigation }: any) {
       const m = await api.get<Match>(`/api/matches/${id}`);
       setMatch(m as any);
       const [ev, lu, st] = await Promise.all([
-        api.get<{ data: MatchEvent[] }>(`/api/matches/${id}/events`).catch(() => ({ data: [] as MatchEvent[] })),
-        api.get<{ data: MatchLineup[] }>(`/api/matches/${id}/lineup`).catch(() => ({ data: [] as MatchLineup[] })),
-        api.get<{ data: MatchStat[] }>(`/api/matches/${id}/stats`).catch(() => ({ data: [] as MatchStat[] })),
+        api.get<{ events: MatchEvent[] }>(`/api/matches/${id}/events`).catch(() => ({ events: [] as MatchEvent[] })),
+        api.get<{ lineup: MatchLineup[] }>(`/api/matches/${id}/lineup`).catch(() => ({ lineup: [] as MatchLineup[] })),
+        api.get<{ stats: MatchStat[] }>(`/api/matches/${id}/stats`).catch(() => ({ stats: [] as MatchStat[] })),
       ]);
-      setEvents(ev.data ?? []);
-      setLineup(lu.data ?? []);
-      setStats(st.data ?? []);
+      setEvents(ev.events ?? []);
+      setLineup(lu.lineup ?? []);
+      setStats(st.stats ?? []);
     } catch {}
     setLoading(false);
   }, [id]);
