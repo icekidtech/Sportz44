@@ -21,14 +21,14 @@ function Input({ placeholder, value, onChangeText, secureTextEntry, autoCapitali
 
 export function LoginScreen({ navigation }: any) {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const onLogin = async () => {
-    if (!email || !password) return Alert.alert('Error', 'Fill in all fields');
+    if (!identifier || !password) return Alert.alert('Error', 'Fill in all fields');
     setLoading(true);
-    try { await login(email, password); } catch (e: any) { Alert.alert('Login failed', e.message); }
+    try { await login(identifier, password); } catch (e: any) { Alert.alert('Login failed', e.message); }
     setLoading(false);
   };
 
@@ -37,7 +37,7 @@ export function LoginScreen({ navigation }: any) {
       <View style={styles.content}>
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>Sign in to Sportz44</Text>
-        <Input placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+        <Input placeholder="Email or username" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
         <Input placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
         <Pressable style={styles.btn} onPress={onLogin} disabled={loading}>
           {loading ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={styles.btnText}>Sign In</Text>}
