@@ -1,11 +1,14 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Sportz44",
+    "slug": "sportz44",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "extra": {
+      "apiUrl": "http://localhost:8080"
+    },
     "ios": {
       "supportsTablet": true
     },
