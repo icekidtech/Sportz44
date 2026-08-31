@@ -14,11 +14,11 @@ export function StandingsScreen() {
   const load = useCallback(async () => {
     try {
       const [s, t] = await Promise.all([
-        api.get<{ data: Standing[] }>('/api/standings').catch(() => ({ data: [] as Standing[] })),
-        api.get<{ data: TopScorer[] }>('/api/standings/1/top-scorers').catch(() => ({ data: [] as TopScorer[] })),
+        api.get<{ standings: Standing[] }>('/api/standings?league=1').catch(() => ({ standings: [] as Standing[] })),
+        api.get<{ top_scorers: TopScorer[] }>('/api/standings/1/top-scorers').catch(() => ({ top_scorers: [] as TopScorer[] })),
       ]);
-      setStandings(s.data ?? []);
-      setScorers(t.data ?? []);
+      setStandings(s.standings ?? []);
+      setScorers(t.top_scorers ?? []);
     } catch {}
     setLoading(false);
     setRefreshing(false);
