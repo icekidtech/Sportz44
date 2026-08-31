@@ -80,11 +80,16 @@ export function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <Text style={s.title}>Welcome back,</Text>
-        <Text style={s.subtitle}>Please login to enjoy full feature</Text>
-
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      <View style={s.heroWrap}>
+        <Image source={require('../../assets/onboarding/slide4.jpg')} style={s.heroImage} resizeMode="cover" />
+        <View style={s.heroOverlay} />
+        <View style={s.heroTextWrap}>
+          <Text style={s.heroTitle}>Welcome back,</Text>
+          <Text style={s.heroSubtitle}>Please login to enjoy full feature</Text>
+        </View>
+      </View>
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" style={s.scroll}>
         <Field iconName="person-outline" placeholder="Username or Email" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
         <Field iconName="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
 
@@ -100,13 +105,14 @@ export function LoginScreen({ navigation }: any) {
         <View style={s.socialRow}>
           <GoogleButton label="Google" />
         </View>
-
-        <Pressable onPress={() => navigation.navigate('Register')} style={s.bottomLink}>
+      </ScrollView>
+      <View style={s.footer}>
+        <Pressable onPress={() => navigation.navigate('Register')}>
           <Text style={s.bottomText}>
             Not have an account? <Text style={s.bottomAccent}>Register now</Text>
           </Text>
         </Pressable>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -133,11 +139,16 @@ export function RegisterScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <Text style={s.title}>Welcome to Sportz44</Text>
-        <Text style={s.subtitle}>Create an account to explore amazing feature</Text>
-
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      <View style={s.heroWrap}>
+        <Image source={require('../../assets/onboarding/slide5.jpg')} style={s.heroImage} resizeMode="cover" />
+        <View style={s.heroOverlay} />
+        <View style={s.heroTextWrap}>
+          <Text style={s.heroTitle}>Welcome to Sportz44</Text>
+          <Text style={s.heroSubtitle}>Create an account to explore amazing feature</Text>
+        </View>
+      </View>
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" style={s.scroll}>
         <Field iconName="person-outline" placeholder="Username or Email" value={username} onChangeText={setUsername} />
         <Field iconName="mail-outline" placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
         <Field iconName="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
@@ -151,20 +162,28 @@ export function RegisterScreen({ navigation }: any) {
         <View style={s.socialRow}>
           <GoogleButton label="Google" />
         </View>
-
-        <Pressable onPress={() => navigation.navigate('Login')} style={s.bottomLink}>
+      </ScrollView>
+      <View style={s.footer}>
+        <Pressable onPress={() => navigation.navigate('Login')}>
           <Text style={s.bottomText}>
             Have an account? <Text style={s.bottomAccent}>Login</Text>
           </Text>
         </Pressable>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
-  content: { padding: 24, paddingTop: 32, paddingBottom: 32 },
+  heroWrap: { height: 180, overflow: 'hidden', position: 'relative' },
+  heroImage: { width: '100%', height: '100%' },
+  heroOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.55)' },
+  heroTextWrap: { position: 'absolute', bottom: 20, left: 24, right: 24 },
+  heroTitle: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  heroSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
+  scroll: { flex: 1 },
+  content: { padding: 24, paddingTop: 20, paddingBottom: 16, flexGrow: 1 },
   title: { color: '#fff', fontSize: 20, fontWeight: '700' },
   subtitle: { color: MUTED, fontSize: 12, marginTop: 6, marginBottom: 24 },
   inputWrap: {
@@ -203,7 +222,14 @@ const s = StyleSheet.create({
   googleImg: { width: 22, height: 22 }, // kept for future asset-based icon
 
   googleLabel: { color: MUTED, fontSize: 10 },
+  footer: {
+    paddingVertical: 16,
+    paddingBottom: 8,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'transparent',
+  },
   bottomLink: { marginTop: 24, alignItems: 'center' },
-  bottomText: { color: MUTED, fontSize: 12 },
+  bottomText: { color: MUTED, fontSize: 12, textAlign: 'center' },
   bottomAccent: { color: TEAL, fontWeight: '600' },
 });
