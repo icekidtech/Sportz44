@@ -80,6 +80,7 @@ func (s *MatchService) SyncCompetition(ctx context.Context, competitionID, seaso
 				Provider:      provider,
 				ProviderID:    f.HomeTeamID,
 				Name:          f.HomeTeamName,
+				LogoURL:       f.HomeTeamLogo,
 				CompetitionID: int(internalCompID),
 			})
 		}
@@ -89,6 +90,7 @@ func (s *MatchService) SyncCompetition(ctx context.Context, competitionID, seaso
 				Provider:      provider,
 				ProviderID:    f.AwayTeamID,
 				Name:          f.AwayTeamName,
+				LogoURL:       f.AwayTeamLogo,
 				CompetitionID: int(internalCompID),
 			})
 		}
@@ -157,4 +159,83 @@ func (s *MatchService) SyncMatchEvents(ctx context.Context, matchID uint) error 
 		return fmt.Errorf("fetch events: %w", err)
 	}
 	return s.matches.UpsertMatchEvents(ctx, m.ID, events)
+}
+
+// SyncMatchLineup fetches and upserts the lineup for a single match.
+func (s *MatchService) SyncMatchLineup(ctx context.Context, matchID uint) error {
+	m, err := s.matches.GetMatch(ctx, matchID)
+	if err != nil {
+		return err
+	}
+	p := s.registry.ByName(m.Provider)
+	lp, ok := p.(external.LineupProvider)
+	if !ok || lp == nil {
+		return fmt.Errorf("provider %q does not support lineups or is unavailable", m.Provider)
+	}
+	lineup, err := lp.GetMatchLineup(ctx, m.ExternalID)
+	if err != nil {
+		return fmt.Errorf("fetch lineup: %w", err)
+	}
+	return s.matches.UpsertMatchLineup(ctx, m.ID, lineup)
+}
+
+// SyncMatchStats fetches and upserts the statistics for a single match.
+func (s *MatchService) SyncMatchStats(ctx context.Context, matchID uint) error {
+	m, err := s.matches.GetMatch(ctx, matchID)
+	if err != nil {
+		return err
+	}
+	p := s.registry.ByName(m.Provider)
+	sp, ok := p.(external.StatsProvider)
+	if !ok || sp == nil {
+		return fmt.Errorf("provider %q does not support stats or is unavailable", m.Provider)
+	}
+	stats, err := sp.GetMatchStats(ctx, m.ExternalID)
+	if err != nil {
+		return fmt.Errorf("fetch stats: %w", err)
+	}
+	return s.matches.UpsertMatchStats(ctx, m.ID, stats)
+}
+
+// SyncMatchDetails fetches and upserts events, lineup, and stats for a single
+// match in one call. Each sub-fetch is best-effort — a failure in one does
+// not abort the others.
+func (s *MatchService) SyncMatchDetails(ctx context.Context, matchID uint) error {
+	m, err := s.matches.GetMatch(ctx, matchID)
+	if err != nil {
+		return err
+	}
+	p := s.registry.ByName(m.Provider)
+	if p == nil {
+		return fmt.Errorf("provider %q not found", m.Provider)
+	}
+	var lastErr error
+	if ep, ok := p.(external.EventsProvider); ok {
+		if events, err := ep.GetLiveEvents(ctx, m.ExternalID); err == nil {
+			if err := s.matches.UpsertMatchEvents(ctx, m.ID, events); err != nil {
+				lastErr = err
+			}
+		} else {
+			lastErr = fmt.Errorf("fetch events: %w", err)
+		}
+	}
+	if lp, ok := p.(external.LineupProvider); ok {
+		if lineup, err := lp.GetMatchLineup(ctx, m.ExternalID); err == nil {
+			if err := s.matches.UpsertMatchLineup(ctx, m.ID, lineup); err != nil {
+				lastErr = err
+			}
+		} else {
+			lastErr = fmt.Errorf("fetch lineup: %w", err)
+		}
+	}
+	if sp, ok := p.(external.StatsProvider); ok {
+		if stats, err := sp.GetMatchStats(ctx, m.ExternalID); err == nil {
+			if err := s.matches.UpsertMatchStats(ctx, m.ID, stats); err != nil {
+				lastErr = err
+			}
+		} else {
+			lastErr = fmt.Errorf("fetch stats: %w", err)
+		}
+	}
+	return lastErr
 }
