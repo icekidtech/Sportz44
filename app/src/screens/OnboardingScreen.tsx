@@ -1,25 +1,22 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, ImageBackground } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius } from '../theme/colors';
-
-const { width } = Dimensions.get('window');
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
+import { colors } from '../theme/colors';
 
 const SLIDES = [
   {
     title: 'Easy Streaming',
     subtitle: 'Choose your plan to watch live match\nyour favourite club.',
-    image: null as string | null,
+    image: require('../../assets/onboarding/slide1.jpg'),
   },
   {
     title: 'Always Uptodate',
     subtitle: 'Stay updated with match highlight,\npreview and hot news',
-    image: null as string | null,
+    image: require('../../assets/onboarding/slide2.jpg'),
   },
   {
     title: 'Get Amazing Reward',
     subtitle: 'Redeem your points to get an\namazing reward',
-    image: null as string | null,
+    image: require('../../assets/onboarding/slide3.jpg'),
   },
 ];
 
@@ -41,14 +38,9 @@ export function OnboardingScreen({ navigation, onComplete }: { navigation: any; 
 
   return (
     <View style={styles.container}>
-      {/* Full-bleed image area with gradient overlay */}
-      <View style={styles.imageArea}>
-        {/* Placeholder for hero image — replace with actual ImageBackground when assets are ready */}
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.placeholderText}>🏟️</Text>
-        </View>
+      <ImageBackground source={slide.image} style={styles.imageArea} resizeMode="cover">
         <View style={styles.gradient} />
-      </View>
+      </ImageBackground>
 
       {/* Bottom content */}
       <View style={styles.bottom}>
@@ -83,21 +75,14 @@ export function OnboardingScreen({ navigation, onComplete }: { navigation: any; 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
-  imageArea: { flex: 1, position: 'relative' },
-  imagePlaceholder: {
-    flex: 1,
-    backgroundColor: '#1A1A1A',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: { fontSize: 48, opacity: 0.3 },
+  imageArea: { flex: 1, justifyContent: 'flex-end' },
   gradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 220,
-    backgroundColor: 'rgba(18,18,18,0.85)',
+    height: 280,
+    backgroundColor: 'rgba(18,18,18,0.75)',
   },
   bottom: {
     backgroundColor: '#121212',
