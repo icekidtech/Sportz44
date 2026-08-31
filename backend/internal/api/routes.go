@@ -59,6 +59,9 @@ func RegisterRoutes(
 		// Match ingestion (admin-triggered sync).
 		protected.GET("/matches/sync", match.SyncCompetition)
 		protected.GET("/matches/:id/sync-events", match.SyncMatchEvents)
+		protected.GET("/matches/:id/sync-lineup", match.SyncMatchLineup)
+		protected.GET("/matches/:id/sync-stats", match.SyncMatchStats)
+		protected.GET("/matches/:id/sync-details", match.SyncMatchDetails)
 
 		// Player endpoints.
 		protected.GET("/players", player.ListByClub)
