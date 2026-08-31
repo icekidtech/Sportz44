@@ -138,10 +138,10 @@ export function RegisterScreen({ navigation }: any) {
         <Text style={s.title}>Welcome to Sportz44</Text>
         <Text style={s.subtitle}>Create an account to explore amazing feature</Text>
 
-        <Field icon="👤" placeholder="Username or Email" value={username} onChangeText={setUsername} />
-        <Field icon="✉️" placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
-        <Field icon="🔒" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-        <Field icon="🔒" placeholder="Confirm Password" value={confirm} onChangeText={setConfirm} secureTextEntry />
+        <Field iconName="person-outline" placeholder="Username or Email" value={username} onChangeText={setUsername} />
+        <Field iconName="mail-outline" placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+        <Field iconName="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+        <Field iconName="lock-closed-outline" placeholder="Confirm Password" value={confirm} onChangeText={setConfirm} secureTextEntry />
 
         <Pressable style={[s.cta, { marginTop: 20 }]} onPress={onRegister} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaText}>Register</Text>}
@@ -200,7 +200,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  googleImg: { width: 22, height: 22 },
+  googleImg: { width: 22, height: 22 }, // kept for future asset-based icon
+
   googleLabel: { color: MUTED, fontSize: 10 },
   bottomLink: { marginTop: 24, alignItems: 'center' },
   bottomText: { color: MUTED, fontSize: 12 },
