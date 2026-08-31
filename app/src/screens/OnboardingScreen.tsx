@@ -37,12 +37,9 @@ export function OnboardingScreen({ navigation, onComplete }: { navigation: any; 
   const handleSkip = () => onComplete();
 
   return (
-    <View style={styles.container}>
-      <ImageBackground source={slide.image} style={styles.imageArea} imageStyle={styles.imageStyle}>
-        <View style={styles.gradient} />
-      </ImageBackground>
-
-      {/* Bottom content */}
+    <ImageBackground source={slide.image} style={styles.container} imageStyle={styles.bgImage} resizeMode="cover">
+      <View style={styles.overlay} />
+      <View style={styles.spacer} />
       <View style={styles.bottom}>
         <Text style={styles.title}>{slide.title}</Text>
         <Text style={styles.subtitle}>{slide.subtitle}</Text>
@@ -69,22 +66,18 @@ export function OnboardingScreen({ navigation, onComplete }: { navigation: any; 
           </Pressable>
         )}
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
-  imageArea: { flex: 1, width: '100%', height: '100%' },
-  imageStyle: { width: '100%', height: '100%' },
-  gradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 320,
-    backgroundColor: 'rgba(18,18,18,0.6)',
+  bgImage: { width: '100%', height: '100%' },
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
+  spacer: { flex: 1 },
   bottom: {
     backgroundColor: '#121212',
     paddingHorizontal: 24,
