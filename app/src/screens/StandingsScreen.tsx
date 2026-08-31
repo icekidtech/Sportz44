@@ -11,18 +11,26 @@ export function StandingsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const currentSeason = String(new Date().getFullYear());
+
   const load = useCallback(async () => {
     try {
       const [s, t] = await Promise.all([
-        api.get<{ standings: Standing[] }>('/api/standings?league=1').catch(() => ({ standings: [] as Standing[] })),
-        api.get<{ top_scorers: TopScorer[] }>('/api/standings/1/top-scorers').catch(() => ({ top_scorers: [] as TopScorer[] })),
+        api.get<{ standings: Standing[] }>(`/api/standings?league=1&season=${currentSeason}`).catch(() => ({ standings: [] as Standing[] })),
+        api.get<{ top_scorers: TopScorer[] }>(`/api/standings/1/top-scorers?season=${currentSeason}`).catch(() => ({ top_scorers: [] as TopScorer[] })),
       ]);
-      setStandings(s.standings ?? []);
+      // Fall back to all-time if current season has no data yet
+      if ((s.standings ?? []).length === 0) {
+        const fallback = await api.get<{ standings: Standing[] }>('/api/standings?league=1').catch(() => ({ standings: [] as Standing[] }));
+        setStandings(fallback.standings ?? []);
+      } else {
+        setStandings(s.standings ?? []);
+      }
       setScorers(t.top_scorers ?? []);
     } catch {}
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [currentSeason]);
 
   useEffect(() => { load(); }, [load]);
 
