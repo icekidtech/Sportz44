@@ -32,11 +32,6 @@ export default function App() {
     setShowOnboarding(false);
   }, []);
 
-  const onOnboardingSkip = useCallback(async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, '1');
-    setShowOnboarding(false);
-  }, []);
-
   if (showSplash) {
     return (
       <>
