@@ -201,7 +201,7 @@ const s = StyleSheet.create({
   hlCard: { width: 160, backgroundColor: colors.card, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
   hlImageWrap: { height: 90, backgroundColor: colors.surfaceLight, position: 'relative' },
   hlImagePh: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  hlOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)' },
+  hlOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.2)' },
   hlBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   hlBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
   hlBody: { padding: 10 },
