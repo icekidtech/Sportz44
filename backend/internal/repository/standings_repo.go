@@ -48,13 +48,17 @@ func NewStandingsRepo(db *gorm.DB) *StandingsRepo {
 
 // GetStandings computes the league table for a competition from its finished
 // matches, sorted by points, then goal difference, then goals for.
-func (r *StandingsRepo) GetStandings(ctx context.Context, competitionID uint) ([]StandingRow, error) {
-	var matches []models.Match
-	err := r.db.WithContext(ctx).
+// If season is non-empty, only matches from that season are included.
+func (r *StandingsRepo) GetStandings(ctx context.Context, competitionID uint, season string) ([]StandingRow, error) {
+	q := r.db.WithContext(ctx).
 		Preload("HomeClub").
 		Preload("AwayClub").
-		Where("competition_id = ? AND status = ?", competitionID, "finished").
-		Find(&matches).Error
+		Where("competition_id = ? AND status = ?", competitionID, "finished")
+	if season != "" {
+		q = q.Where("season = ?", season)
+	}
+	var matches []models.Match
+	err := q.Find(&matches).Error
 	if err != nil {
 		return nil, err
 	}
@@ -122,9 +126,9 @@ func (r *StandingsRepo) GetStandings(ctx context.Context, competitionID uint) ([
 }
 
 // GetTopScorers computes the golden-boot standings for a competition from
-// goal events, sorted by goals, then assists. Assists are read from the
-// assist fields embedded in each goal event, so assist-only players appear.
-func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, limit int) ([]TopScorer, error) {
+// goal events, sorted by goals, then assists. If season is non-empty, only
+// matches from that season are included.
+func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, season string, limit int) ([]TopScorer, error) {
 	type goalEvent struct {
 		PlayerID         uint
 		PlayerName       string
@@ -135,14 +139,17 @@ func (r *StandingsRepo) GetTopScorers(ctx context.Context, competitionID uint, l
 		MatchID          uint
 	}
 	var events []goalEvent
-	err := r.db.WithContext(ctx).
+	q2 := r.db.WithContext(ctx).
 		Model(&models.MatchEvent{}).
 		Select("e.player_id, e.player_name, c.id AS club_id, c.name AS club_name, e.assist_player_id, e.assist_player_name, e.match_id").
 		Table("match_events e").
 		Joins("JOIN matches m ON m.id = e.match_id").
 		Joins("LEFT JOIN clubs c ON c.external_id = CAST(e.team_id AS TEXT)").
-		Where("m.competition_id = ? AND e.event_type = 'goal'", competitionID).
-		Scan(&events).Error
+		Where("m.competition_id = ? AND e.event_type = 'goal'", competitionID)
+	if season != "" {
+		q2 = q2.Where("m.season = ?", season)
+	}
+	err := q2.Scan(&events).Error
 	if err != nil {
 		return nil, err
 	}
