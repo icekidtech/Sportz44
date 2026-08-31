@@ -12,13 +12,13 @@ const TABS: Tab[] = ['All', 'Preview', 'Highlight', 'News'];
 
 function TopTabs({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabsRow}>
+    <View style={s.tabsRow}>
       {TABS.map((t) => (
         <Pressable key={t} onPress={() => onChange(t)} style={[s.tab, active === t && s.tabActive]}>
           <Text style={[s.tabText, active === t && s.tabTextActive]}>{t}</Text>
         </Pressable>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -40,7 +40,7 @@ function HighlightCard({ match, onPress }: { match: Match; onPress?: () => void 
           {match.home_club?.name ?? 'Home'} vs {match.away_club?.name ?? 'Away'}
         </Text>
         <Text style={s.hlMeta} numberOfLines={1}>
-          {match.competition?.name ?? ''} {match.venue ? `· ${match.venue}` : ''}
+          {match.venue ?? ''}
         </Text>
       </View>
     </Pressable>
@@ -87,6 +87,7 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => { load(); }, [load]);
 
   const highlights = [...live, ...finished].slice(0, 6);
+  const upcomingOrRecent = upcoming.length > 0 ? upcoming : finished.slice(0, 4);
   const showHighlights = tab === 'All' || tab === 'Highlight';
   const showNews = tab === 'All' || tab === 'News';
   const showUpcoming = tab === 'All' || tab === 'Preview';
@@ -136,13 +137,13 @@ export function HomeScreen({ navigation }: any) {
         {showUpcoming && (
           <>
             <View style={s.sectionHead}>
-              <Text style={s.sectionTitle}>Upcoming</Text>
+              <Text style={s.sectionTitle}>{upcoming.length > 0 ? 'Upcoming' : 'Recent'}</Text>
               <Pressable onPress={() => navigation.navigate('Fixtures')}><Text style={s.seeAll}>See All</Text></Pressable>
             </View>
-            {upcoming.length === 0 ? (
-              <View style={s.emptyCard}><Text style={s.emptyText}>No upcoming fixtures</Text></View>
+            {upcomingOrRecent.length === 0 ? (
+              <View style={s.emptyCard}><Text style={s.emptyText}>No fixtures</Text></View>
             ) : (
-              upcoming.map((m) => (
+              upcomingOrRecent.map((m) => (
                 <Pressable key={m.id} onPress={() => navigation.navigate('MatchDetail', { id: m.id })} style={s.fixtureRow}>
                   <Text style={s.fixtureTeams} numberOfLines={1}>{m.home_club?.name ?? 'Home'} vs {m.away_club?.name ?? 'Away'}</Text>
                   <Text style={s.fixtureMeta}>{new Date(m.match_date).toLocaleDateString()} · {m.venue ?? ''}</Text>
@@ -185,8 +186,8 @@ const s = StyleSheet.create({
   logo: { color: colors.text, fontSize: 18, fontWeight: '800', fontStyle: 'italic' },
   headerIcons: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
-  tabsRow: { paddingHorizontal: spacing.md, gap: 8, paddingVertical: 8 },
-  tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  tabsRow: { flexDirection: 'row', paddingHorizontal: spacing.md, gap: 8, paddingVertical: 8 },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: radius.full, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   tabActive: { backgroundColor: colors.text, borderColor: colors.text },
   tabText: { color: colors.textSecondary, fontSize: 12, fontWeight: '600' },
   tabTextActive: { color: colors.background },
