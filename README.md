@@ -85,7 +85,7 @@ sportz44/
 ├── deploy/                   # PM2, build/deploy scripts, nginx, VPS setup
 ├── .github/workflows/        # CI + CD (separate files)
 ├── bruno/                    # API test collection (Bruno)
-├── mobile/                   # React Native app
+├── app/                      # React Native app
 ├── admin-panel/              # React.js admin dashboard
 └── docs/                     # PRD, API docs, architecture, schema, deployment
 ```
