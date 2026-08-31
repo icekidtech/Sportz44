@@ -81,7 +81,7 @@ export function LoginScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-      <View style={s.heroWrap}>
+      <View style={s.heroWrapLogin}>
         <Image source={require('../../assets/onboarding/slide4.jpg')} style={s.heroImage} resizeMode="cover" />
         <View style={s.heroOverlay} />
         <View style={s.heroTextWrap}>
@@ -89,7 +89,7 @@ export function LoginScreen({ navigation }: any) {
           <Text style={s.heroSubtitle}>Please login to enjoy full feature</Text>
         </View>
       </View>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" style={s.scroll}>
+      <ScrollView contentContainerStyle={s.contentLogin} keyboardShouldPersistTaps="handled" style={s.scroll}>
         <Field iconName="person-outline" placeholder="Username or Email" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
         <Field iconName="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
 
@@ -103,7 +103,7 @@ export function LoginScreen({ navigation }: any) {
 
         <Text style={s.divider}>Or login with</Text>
         <View style={s.socialRow}>
-          <GoogleButton label="Google" />
+          <GoogleButton label="" />
         </View>
       </ScrollView>
       <View style={s.footer}>
@@ -160,7 +160,7 @@ export function RegisterScreen({ navigation }: any) {
 
         <Text style={s.divider}>Or register with</Text>
         <View style={s.socialRow}>
-          <GoogleButton label="Google" />
+          <GoogleButton label="" />
         </View>
       </ScrollView>
       <View style={s.footer}>
@@ -177,6 +177,7 @@ export function RegisterScreen({ navigation }: any) {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
   heroWrap: { height: 180, overflow: 'hidden', position: 'relative' },
+  heroWrapLogin: { height: 260, overflow: 'hidden', position: 'relative' },
   heroImage: { width: '100%', height: '100%' },
   heroOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.55)' },
   heroTextWrap: { position: 'absolute', bottom: 20, left: 24, right: 24 },
@@ -184,6 +185,7 @@ const s = StyleSheet.create({
   heroSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
   scroll: { flex: 1 },
   content: { padding: 24, paddingTop: 20, paddingBottom: 16, flexGrow: 1 },
+  contentLogin: { padding: 24, paddingTop: 28, paddingBottom: 16, flexGrow: 1, justifyContent: 'center' },
   title: { color: '#fff', fontSize: 20, fontWeight: '700' },
   subtitle: { color: MUTED, fontSize: 12, marginTop: 6, marginBottom: 24 },
   inputWrap: {
