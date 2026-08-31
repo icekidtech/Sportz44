@@ -100,6 +100,7 @@ type apiFixture struct {
 type apiTeamRef struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
+	Logo string `json:"logo"`
 }
 
 // ---- FixtureProvider ----
@@ -149,7 +150,9 @@ func (p *APISportsProvider) mapFixture(f apiFixture) Fixture {
 		CompetitionID: f.League.ID,
 		Season:        "",
 		HomeTeamID:    strconv.Itoa(f.Teams.Home.ID),
+		HomeTeamLogo:  f.Teams.Home.Logo,
 		AwayTeamID:    strconv.Itoa(f.Teams.Away.ID),
+		AwayTeamLogo:  f.Teams.Away.Logo,
 		HomeTeamName:  f.Teams.Home.Name,
 		AwayTeamName:  f.Teams.Away.Name,
 		MatchDate:     date,
@@ -351,6 +354,71 @@ func normalizeEventType(t string) string {
 	default:
 		return "event"
 	}
+}
+
+// ---- LineupProvider ----
+
+func (p *APISportsProvider) GetMatchLineup(ctx context.Context, providerFixtureID string) ([]MatchLineupEntry, error) {
+	path := "/fixtures/lineups?fixture=" + providerFixtureID
+	var out struct {
+		Response []struct {
+			Team struct {
+				ID int `json:"id"`
+			} `json:"team"`
+			StartXI [][]struct {
+				Player struct {
+					ID     int    `json:"id"`
+					Name   string `json:"name"`
+					Number int    `json:"number"`
+					Pos    string `json:"pos"`
+				} `json:"player"`
+			} `json:"startXI"`
+			Substitutes [][]struct {
+				Player struct {
+					ID     int    `json:"id"`
+					Name   string `json:"name"`
+					Number int    `json:"number"`
+					Pos    string `json:"pos"`
+				} `json:"player"`
+			} `json:"substitutes"`
+		} `json:"response"`
+	}
+	if err := p.client.get(ctx, path, &out); err != nil {
+		return nil, err
+	}
+	var lineup []MatchLineupEntry
+	for _, team := range out.Response {
+		teamID := strconv.Itoa(team.Team.ID)
+		for _, row := range team.StartXI {
+			if len(row) == 0 {
+				continue
+			}
+			pl := row[0].Player
+			lineup = append(lineup, MatchLineupEntry{
+				TeamID:     teamID,
+				PlayerID:   strconv.Itoa(pl.ID),
+				PlayerName: pl.Name,
+				Position:   pl.Pos,
+				Number:     pl.Number,
+				IsStarter:  true,
+			})
+		}
+		for _, row := range team.Substitutes {
+			if len(row) == 0 {
+				continue
+			}
+			pl := row[0].Player
+			lineup = append(lineup, MatchLineupEntry{
+				TeamID:     teamID,
+				PlayerID:   strconv.Itoa(pl.ID),
+				PlayerName: pl.Name,
+				Position:   pl.Pos,
+				Number:     pl.Number,
+				IsStarter:  false,
+			})
+		}
+	}
+	return lineup, nil
 }
 
 // ---- StatsProvider ----
