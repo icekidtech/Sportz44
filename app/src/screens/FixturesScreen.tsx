@@ -22,8 +22,8 @@ export function FixturesScreen({ navigation }: any) {
   const load = useCallback(async () => {
     try {
       const q = filter ? `?status=${filter}` : '';
-      const res = await api.get<{ data: Match[] }>(`/api/matches${q}`);
-      setMatches(res.data ?? []);
+      const res = await api.get<{ matches: Match[] }>(`/api/matches${q}`);
+      setMatches(res.matches ?? []);
     } catch { setMatches([]); }
     setLoading(false);
     setRefreshing(false);
