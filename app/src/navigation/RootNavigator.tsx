@@ -45,16 +45,32 @@ function Tabs() {
   );
 }
 
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function AppStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack.Screen name="Main" component={Tabs} />
+      <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
 export function RootNavigator() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Screen name="Main" component={Tabs} />
-        <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Register" component={RegisterScreen} options={{ presentation: 'modal' }} />
-      </Stack.Navigator>
+      {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
