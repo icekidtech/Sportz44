@@ -1,21 +1,63 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, radius } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 
-function Input({ placeholder, value, onChangeText, secureTextEntry, autoCapitalize, keyboardType }: any) {
+const TEAL = '#0EA5B5';
+const BG = '#121212';
+const INPUT_BG = '#1E1E1E';
+const INPUT_BORDER = '#2E2E2E';
+const MUTED = '#6B7280';
+const PLACEHOLDER = '#4B5563';
+
+function Field({
+  icon,
+  placeholder,
+  value,
+  onChangeText,
+  secureTextEntry,
+  keyboardType,
+  autoCapitalize,
+}: {
+  icon: string;
+  placeholder: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  secureTextEntry?: boolean;
+  keyboardType?: any;
+  autoCapitalize?: any;
+}) {
+  const [hidden, setHidden] = useState(!!secureTextEntry);
   return (
-    <TextInput
-      placeholder={placeholder}
-      placeholderTextColor={colors.textMuted}
-      value={value}
-      onChangeText={onChangeText}
-      secureTextEntry={secureTextEntry}
-      autoCapitalize={autoCapitalize ?? 'none'}
-      keyboardType={keyboardType}
-      style={styles.input}
-    />
+    <View style={s.inputWrap}>
+      <Text style={s.inputIcon}>{icon}</Text>
+      <TextInput
+        placeholder={placeholder}
+        placeholderTextColor={PLACEHOLDER}
+        value={value}
+        onChangeText={onChangeText}
+        secureTextEntry={hidden}
+        autoCapitalize={autoCapitalize ?? 'none'}
+        keyboardType={keyboardType}
+        style={s.input}
+      />
+      {secureTextEntry && (
+        <Pressable onPress={() => setHidden((h) => !h)} hitSlop={8}>
+          <Text style={s.eye}>{hidden ? '👁' : '🙈'}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+function GoogleButton({ label }: { label: string }) {
+  return (
+    <Pressable style={s.googleBtn} onPress={() => Alert.alert('Coming soon', 'Google sign-in will be available soon.')}>
+      <View style={s.googleCircle}>
+        <Text style={s.googleG}>G</Text>
+      </View>
+      <Text style={s.googleLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -28,24 +70,42 @@ export function LoginScreen({ navigation }: any) {
   const onLogin = async () => {
     if (!identifier || !password) return Alert.alert('Error', 'Fill in all fields');
     setLoading(true);
-    try { await login(identifier, password); } catch (e: any) { Alert.alert('Login failed', e.message); }
+    try {
+      await login(identifier, password);
+    } catch (e: any) {
+      Alert.alert('Login failed', e.message);
+    }
     setLoading(false);
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Sign in to Sportz44</Text>
-        <Input placeholder="Email or username" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
-        <Input placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-        <Pressable style={styles.btn} onPress={onLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={styles.btnText}>Sign In</Text>}
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+        <Text style={s.title}>Welcome back,</Text>
+        <Text style={s.subtitle}>Please login to enjoy full feature</Text>
+
+        <Field icon="👤" placeholder="Username or Email" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
+        <Field icon="🔒" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+
+        <Pressable style={s.forgotWrap} onPress={() => Alert.alert('Coming soon', 'Password reset coming soon.')}>
+          <Text style={s.forgot}>Forgot password</Text>
         </Pressable>
-        <Pressable onPress={() => navigation.navigate('Register')} style={styles.link}>
-          <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkAccent}>Sign up</Text></Text>
+
+        <Pressable style={s.cta} onPress={onLogin} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaText}>Login</Text>}
         </Pressable>
-      </View>
+
+        <Text style={s.divider}>Or login with</Text>
+        <View style={s.socialRow}>
+          <GoogleButton label="Google" />
+        </View>
+
+        <Pressable onPress={() => navigation.navigate('Register')} style={s.bottomLink}>
+          <Text style={s.bottomText}>
+            Not have an account? <Text style={s.bottomAccent}>Register now</Text>
+          </Text>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -55,47 +115,94 @@ export function RegisterScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
 
   const onRegister = async () => {
-    if (!username || !email || !password) return Alert.alert('Error', 'Fill in all fields');
+    if (!username || !email || !password || !confirm) return Alert.alert('Error', 'Fill in all fields');
+    if (password !== confirm) return Alert.alert('Error', 'Passwords do not match');
+    if (password.length < 8) return Alert.alert('Error', 'Password must be at least 8 characters');
     setLoading(true);
-    try { await register(username, email, password); } catch (e: any) { Alert.alert('Registration failed', e.message); }
+    try {
+      await register(username, email, password);
+    } catch (e: any) {
+      Alert.alert('Registration failed', e.message);
+    }
     setLoading(false);
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Create account</Text>
-        <Text style={styles.subtitle}>Join Sportz44</Text>
-        <Input placeholder="Username" value={username} onChangeText={setUsername} />
-        <Input placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
-        <Input placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-        <Pressable style={styles.btn} onPress={onRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color={colors.textOnPrimary} /> : <Text style={styles.btnText}>Create Account</Text>}
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+        <Text style={s.title}>Welcome to Sportz44</Text>
+        <Text style={s.subtitle}>Create an account to explore amazing feature</Text>
+
+        <Field icon="👤" placeholder="Username or Email" value={username} onChangeText={setUsername} />
+        <Field icon="✉️" placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+        <Field icon="🔒" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+        <Field icon="🔒" placeholder="Confirm Password" value={confirm} onChangeText={setConfirm} secureTextEntry />
+
+        <Pressable style={[s.cta, { marginTop: 20 }]} onPress={onRegister} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaText}>Register</Text>}
         </Pressable>
-        <Pressable onPress={() => navigation.navigate('Login')} style={styles.link}>
-          <Text style={styles.linkText}>Already have an account? <Text style={styles.linkAccent}>Sign in</Text></Text>
+
+        <Text style={s.divider}>Or register with</Text>
+        <View style={s.socialRow}>
+          <GoogleButton label="Google" />
+        </View>
+
+        <Pressable onPress={() => navigation.navigate('Login')} style={s.bottomLink}>
+          <Text style={s.bottomText}>
+            Have an account? <Text style={s.bottomAccent}>Login</Text>
+          </Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  content: { flex: 1, padding: spacing.lg, justifyContent: 'center' },
-  title: { color: colors.text, fontSize: 26, fontWeight: '800' },
-  subtitle: { color: colors.textMuted, fontSize: 13, marginTop: 4, marginBottom: 24 },
-  input: {
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border,
-    borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 13,
-    color: colors.text, fontSize: 14, marginBottom: 12,
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: BG },
+  content: { padding: 24, paddingTop: 32, paddingBottom: 32 },
+  title: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  subtitle: { color: MUTED, fontSize: 12, marginTop: 6, marginBottom: 24 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: INPUT_BG,
+    borderWidth: 1,
+    borderColor: INPUT_BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+    marginBottom: 12,
   },
-  btn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnText: { color: colors.textOnPrimary, fontSize: 14, fontWeight: '700' },
-  link: { marginTop: 16, alignItems: 'center' },
-  linkText: { color: colors.textMuted, fontSize: 13 },
-  linkAccent: { color: colors.primary, fontWeight: '600' },
+  inputIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
+  input: { flex: 1, color: '#fff', fontSize: 13, paddingVertical: 12 },
+  eye: { fontSize: 14, opacity: 0.5, paddingLeft: 8 },
+  forgotWrap: { alignSelf: 'flex-end', marginTop: 2, marginBottom: 20 },
+  forgot: { color: MUTED, fontSize: 11 },
+  cta: {
+    backgroundColor: TEAL,
+    borderRadius: 24,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  ctaText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  divider: { color: MUTED, fontSize: 11, textAlign: 'center', marginTop: 20, marginBottom: 14 },
+  socialRow: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
+  googleBtn: { alignItems: 'center', gap: 6 },
+  googleCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleG: { color: '#4285F4', fontSize: 18, fontWeight: '800' },
+  googleLabel: { color: MUTED, fontSize: 10 },
+  bottomLink: { marginTop: 24, alignItems: 'center' },
+  bottomText: { color: MUTED, fontSize: 12 },
+  bottomAccent: { color: TEAL, fontWeight: '600' },
 });
