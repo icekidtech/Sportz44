@@ -13,8 +13,8 @@ export function LiveScreen({ navigation }: any) {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ data: Match[] }>('/api/matches?status=live');
-      setMatches(res.data ?? []);
+      const res = await api.get<{ matches: Match[] }>('/api/matches?status=live');
+      setMatches(res.matches ?? []);
     } catch { setMatches([]); }
     setLoading(false);
     setRefreshing(false);
