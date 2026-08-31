@@ -120,6 +120,7 @@ type espnCompetitor struct {
 		ShortName    string `json:"shortName"`
 		Abbreviation string `json:"abbreviation"`
 		Location     string `json:"location"`
+		Logo         string `json:"logo"`
 	} `json:"team"`
 	Statistics []espnStat `json:"statistics"`
 }
@@ -241,7 +242,9 @@ func (p *ESPNProvider) mapFixture(slug, id, date string, status espnStatus, venu
 		Provider:     p.Name(),
 		ProviderID:   slug + ":" + id,
 		HomeTeamID:   home.Team.ID,
+		HomeTeamLogo: home.Team.Logo,
 		AwayTeamID:   away.Team.ID,
+		AwayTeamLogo: away.Team.Logo,
 		HomeTeamName: home.Team.DisplayName,
 		AwayTeamName: away.Team.DisplayName,
 		MatchDate:    parsed,
@@ -323,6 +326,53 @@ func (p *ESPNProvider) GetLiveEvents(ctx context.Context, providerFixtureID stri
 		events = append(events, ev)
 	}
 	return events, nil
+}
+
+// ---- LineupProvider ----
+
+func (p *ESPNProvider) GetMatchLineup(ctx context.Context, providerFixtureID string) ([]MatchLineupEntry, error) {
+	slug, eventID, err := parseESPNID(providerFixtureID)
+	if err != nil {
+		return nil, err
+	}
+	path := "/" + slug + "/summary?event=" + eventID
+	var out struct {
+		Rosters []struct {
+			Team struct {
+				ID string `json:"id"`
+			} `json:"team"`
+			Roster []struct {
+				Athlete struct {
+					ID          string `json:"id"`
+					DisplayName string `json:"displayName"`
+					Jersey      string `json:"jersey"`
+					Position    struct {
+						Abbreviation string `json:"abbreviation"`
+					} `json:"position"`
+				} `json:"athlete"`
+				Starter  bool `json:"starter"`
+				SubbedIn bool `json:"subbedIn"`
+			} `json:"roster"`
+		} `json:"rosters"`
+	}
+	if err := p.client.get(ctx, path, &out); err != nil {
+		return nil, err
+	}
+	var lineup []MatchLineupEntry
+	for _, team := range out.Rosters {
+		for _, r := range team.Roster {
+			num, _ := strconv.Atoi(r.Athlete.Jersey)
+			lineup = append(lineup, MatchLineupEntry{
+				TeamID:     team.Team.ID,
+				PlayerID:   r.Athlete.ID,
+				PlayerName: r.Athlete.DisplayName,
+				Position:   r.Athlete.Position.Abbreviation,
+				Number:     num,
+				IsStarter:  r.Starter,
+			})
+		}
+	}
+	return lineup, nil
 }
 
 // ---- StatsProvider ----
