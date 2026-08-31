@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
 const TEAL = '#0EA5B5';
@@ -11,7 +12,7 @@ const MUTED = '#6B7280';
 const PLACEHOLDER = '#4B5563';
 
 function Field({
-  icon,
+  iconName,
   placeholder,
   value,
   onChangeText,
@@ -19,7 +20,7 @@ function Field({
   keyboardType,
   autoCapitalize,
 }: {
-  icon: string;
+  iconName: keyof typeof Ionicons.glyphMap;
   placeholder: string;
   value: string;
   onChangeText: (v: string) => void;
@@ -30,7 +31,7 @@ function Field({
   const [hidden, setHidden] = useState(!!secureTextEntry);
   return (
     <View style={s.inputWrap}>
-      <Text style={s.inputIcon}>{icon}</Text>
+      <Ionicons name={iconName} size={16} color={MUTED} style={s.inputIcon} />
       <TextInput
         placeholder={placeholder}
         placeholderTextColor={PLACEHOLDER}
@@ -43,7 +44,7 @@ function Field({
       />
       {secureTextEntry && (
         <Pressable onPress={() => setHidden((h) => !h)} hitSlop={8}>
-          <Text style={s.eye}>{hidden ? '👁' : '🙈'}</Text>
+          <Ionicons name={hidden ? 'eye-off-outline' : 'eye-outline'} size={18} color={MUTED} />
         </Pressable>
       )}
     </View>
@@ -54,7 +55,7 @@ function GoogleButton({ label }: { label: string }) {
   return (
     <Pressable style={s.googleBtn} onPress={() => Alert.alert('Coming soon', 'Google sign-in will be available soon.')}>
       <View style={s.googleCircle}>
-        <Text style={s.googleG}>G</Text>
+        <Image source={require('../../assets/google.png')} style={s.googleImg} resizeMode="contain" />
       </View>
       <Text style={s.googleLabel}>{label}</Text>
     </Pressable>
@@ -84,8 +85,8 @@ export function LoginScreen({ navigation }: any) {
         <Text style={s.title}>Welcome back,</Text>
         <Text style={s.subtitle}>Please login to enjoy full feature</Text>
 
-        <Field icon="👤" placeholder="Username or Email" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
-        <Field icon="🔒" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+        <Field iconName="person-outline" placeholder="Username or Email" value={identifier} onChangeText={setIdentifier} keyboardType="email-address" />
+        <Field iconName="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
 
         <Pressable style={s.forgotWrap} onPress={() => Alert.alert('Coming soon', 'Password reset coming soon.')}>
           <Text style={s.forgot}>Forgot password</Text>
@@ -177,9 +178,8 @@ const s = StyleSheet.create({
     paddingVertical: 2,
     marginBottom: 12,
   },
-  inputIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
+  inputIcon: { marginRight: 8 },
   input: { flex: 1, color: '#fff', fontSize: 13, paddingVertical: 12 },
-  eye: { fontSize: 14, opacity: 0.5, paddingLeft: 8 },
   forgotWrap: { alignSelf: 'flex-end', marginTop: 2, marginBottom: 20 },
   forgot: { color: MUTED, fontSize: 11 },
   cta: {
@@ -200,7 +200,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  googleG: { color: '#4285F4', fontSize: 18, fontWeight: '800' },
+  googleImg: { width: 22, height: 22 },
   googleLabel: { color: MUTED, fontSize: 10 },
   bottomLink: { marginTop: 24, alignItems: 'center' },
   bottomText: { color: MUTED, fontSize: 12 },
