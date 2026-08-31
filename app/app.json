@@ -6,9 +6,15 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
     "extra": {
       "apiUrl": "http://localhost:8080"
     },
+    "plugins": [["expo-splash-screen", { "backgroundColor": "#121212", "image": "./assets/splash-icon.png", "imageWidth": 200 }]],
     "ios": {
       "supportsTablet": true
     },
