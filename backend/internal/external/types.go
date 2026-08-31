@@ -109,7 +109,9 @@ type Fixture struct {
 	HomeTeamID      string // provider-specific team ID
 	AwayTeamID      string // provider-specific team ID
 	HomeTeamName    string
+	HomeTeamLogo    string
 	AwayTeamName    string
+	AwayTeamLogo    string
 	MatchDate       time.Time
 	Status          string // scheduled | live | finished | postponed
 	HomeScore       int
@@ -173,6 +175,23 @@ type StatsProvider interface {
 	Provider
 	// GetMatchStats returns the statistics for a match.
 	GetMatchStats(ctx context.Context, providerFixtureID string) ([]MatchStat, error)
+}
+
+// MatchLineupEntry is a provider-agnostic lineup entry for one player in a match.
+type MatchLineupEntry struct {
+	TeamID     string
+	PlayerID   string
+	PlayerName string
+	Position   string
+	Number     int
+	IsStarter  bool
+}
+
+// LineupProvider supplies per-match lineups.
+type LineupProvider interface {
+	Provider
+	// GetMatchLineup returns the lineup for a match.
+	GetMatchLineup(ctx context.Context, providerFixtureID string) ([]MatchLineupEntry, error)
 }
 
 // Competition is a provider-agnostic representation of a league/cup.
