@@ -1,12 +1,12 @@
 export const colors = {
-  // NowTV-inspired dark theme
-  background: '#0A0E1A',
-  surface: '#141A2A',
-  surfaceLight: '#1C2333',
-  surfaceElevated: '#242E44',
-  card: '#1A2235',
-  border: '#2A3447',
-  borderLight: '#334155',
+  // Figma main-bg
+  background: '#121212',
+  surface: '#1A1A1A',
+  surfaceLight: '#242424',
+  surfaceElevated: '#2A2A2A',
+  card: '#1E1E1E',
+  border: '#2E2E2E',
+  borderLight: '#3A3A3A',
 
   // Brand
   primary: '#00D084',
