@@ -38,7 +38,7 @@ export function OnboardingScreen({ navigation, onComplete }: { navigation: any; 
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={slide.image} style={styles.imageArea} resizeMode="cover">
+      <ImageBackground source={slide.image} style={styles.imageArea} imageStyle={styles.imageStyle}>
         <View style={styles.gradient} />
       </ImageBackground>
 
@@ -75,14 +75,15 @@ export function OnboardingScreen({ navigation, onComplete }: { navigation: any; 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
-  imageArea: { flex: 1, justifyContent: 'flex-end' },
+  imageArea: { flex: 1, width: '100%', height: '100%' },
+  imageStyle: { width: '100%', height: '100%' },
   gradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 280,
-    backgroundColor: 'rgba(18,18,18,0.75)',
+    height: 320,
+    backgroundColor: 'rgba(18,18,18,0.6)',
   },
   bottom: {
     backgroundColor: '#121212',
