@@ -8,11 +8,35 @@ export const API_BASE_URL =
   ENV_BASE_URL ??
   (__DEV__ ? 'http://localhost:8080' : 'https://api.sportz44.com');
 
-type RequestOptions = RequestInit & { skipAuth?: boolean };
+type RequestOptions = RequestInit;
 
-let getAuthToken: (() => string | null) | null = null;
-export function setAuthTokenGetter(fn: () => string | null) {
-  getAuthToken = fn;
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: () => void) {
+  onUnauthorized = fn;
+}
+
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
+async function doRefresh(): Promise<void> {
+  if (isRefreshing && refreshPromise) return refreshPromise;
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      onUnauthorized?.();
+      throw new Error('Session expired');
+    }
+  })();
+  try {
+    await refreshPromise;
+  } finally {
+    isRefreshing = false;
+    refreshPromise = null;
+  }
 }
 
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
@@ -20,15 +44,29 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
     'Content-Type': 'application/json',
     ...(opts.headers as Record<string, string>),
   };
-  if (!opts.skipAuth && getAuthToken) {
-    const token = getAuthToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+
+  const doFetch = () =>
+    fetch(`${API_BASE_URL}${path}`, {
+      ...opts,
+      headers,
+      credentials: 'include',
+    });
+
+  let res = await doFetch();
+
+  // Auto-refresh on 401 (access cookie expired) — retry once.
+  // Skip for auth endpoints themselves to avoid loops.
+  const isAuthPath = path.startsWith('/api/auth/');
+  if (res.status === 401 && !isAuthPath) {
+    try {
+      await doRefresh();
+      res = await doFetch();
+    } catch {
+      // doRefresh already called onUnauthorized
+      throw new Error('Session expired — please sign in again');
+    }
   }
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...opts,
-    headers,
-    credentials: 'include',
-  });
+
   if (!res.ok) {
     const body = await res.text();
     let msg = body;
