@@ -154,12 +154,6 @@ Actions** for CI/CD. The database schema is created automatically via GORM
 
 ---
 
-## Documentation
-
-- **Product Requirements:** [`docs/SPORT_PLATFORM_PRD.md`](docs/SPORT_PLATFORM_PRD.md)
-- API endpoints, database schema, caching strategy, and monitoring details are all covered in the PRD.
-
----
 
 ## License
 
